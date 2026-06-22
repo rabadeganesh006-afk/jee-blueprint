@@ -3,13 +3,15 @@ backend:
   phases:
     build:
       commands:
-        - npm ci || npm install
-        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+        - npm install
+        - export CI=1
+        - npx ampx pipeline-deploy --branch main --app-id d2zaokzgxwci43
 frontend:
   phases:
     preBuild:
       commands:
-        - npm ci || npm install
+        - npm install
+        - npx ampx generate outputs --branch main --app-id d2zaokzgxwci43
     build:
       commands:
         - npm run build
