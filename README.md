@@ -1,14 +1,13 @@
-# JEE Blueprint V8
+# JEE Blueprint V10
 
-Functional version: no fake progress. User actions update study time, chapter progress, PYQ solved count, profile data, search, theme, class selection and recent activity using browser localStorage.
+Functional real-data version with:
 
+- Manual target exam name and target date
+- Today's date auto updates from browser date
+- Full syllabus tracker
+- Accurate decimal progress percentages
+- Welcome back uses profile student name, not email
+- Responsive layout for 100% browser zoom
+- Gemini AI with current model fallback and local fallback if quota is 0
 
-## V9 Gemini AI Tutor
-
-Add this Amplify secret before deploying:
-
-Name: GEMINI_API_KEY
-Value: your Google AI Studio API key
-Branch: main
-
-The API key is used only inside the Amplify Function. Do not commit it to GitHub.
+Keep `public/googlefa442ae31764b829.html` for Search Console verification.
