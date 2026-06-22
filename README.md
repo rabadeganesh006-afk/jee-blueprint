@@ -1,3 +1,3 @@
-# JEE Blueprint V15 Focus Timer + Profile Target
+# JEE Blueprint V16 Polished Dashboard Timer
 
-Adds real start/stop/resume/reset study timer, removes dashboard exam target card, and moves target editing into Profile.
+Polished dashboard alignment, subject-colored progress ring, improved study timer, and useful next-topic checklist card.

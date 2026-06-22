@@ -47,6 +47,7 @@ const percentText = (value) => {
 };
 const minutesText = (minutes = 0) => `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 const DEFAULT_TIMER_MINUTES = 150;
+const SUBJECT_COLORS = { Physics: '#3b82f6', Chemistry: '#10b981', Mathematics: '#a855f7' };
 const normalizeTimer = (timer = {}) => {
   const currentDate = todayKey();
   if (!timer || timer.date !== currentDate) {
@@ -131,7 +132,7 @@ const defaultData = (email = '') => ({
 
 function makeStorageKey(user) {
   const email = user?.signInDetails?.loginId || user?.attributes?.email || user?.username || 'student';
-  return `jee-blueprint-v15-focus-timer-profile-${email}`;
+  return `jee-blueprint-v16-polished-dashboard-timer-${email}`;
 }
 
 function loadData(key, email) {
@@ -466,10 +467,28 @@ function Dashboard({ data, planner, progressValue, doneCount, totalTopics, total
   const visibleActivities = (data.activities || []).filter((activity) => !activity.text?.startsWith('Unchecked topic:'));
   const allPlannerTopics = Object.entries(planner).flatMap(([subject, chapters]) => chapters.flatMap((chapter) => chapter.topics.map((topic) => ({ subject, chapter, topic }))));
   const nextPending = allPlannerTopics.find(({ topic }) => !data.topicsDone?.[topic.id]);
-  const nextFlagged = allPlannerTopics.find(({ topic }) => data.topicsFlagged?.[topic.id] && !data.topicsDone?.[topic.id]);
+  const nextActionTopics = allPlannerTopics.filter(({ topic }) => !data.topicsDone?.[topic.id]).slice(0, 3);
+  const subjectStats = Object.entries(planner).map(([subject, chapters]) => {
+    const topics = chapters.flatMap((chapter) => chapter.topics);
+    const count = topics.filter((topic) => data.topicsDone?.[topic.id]).length;
+    return { subject, topics, count, pct: percentNumber(count, topics.length), color: SUBJECT_COLORS[subject] || '#2563eb' };
+  });
+  let currentAngle = 0;
+  const ringParts = [];
+  subjectStats.forEach((stat) => {
+    const angle = totalTopics ? (stat.count / totalTopics) * 360 : 0;
+    if (angle > 0) {
+      ringParts.push(`${stat.color} ${currentAngle}deg ${currentAngle + angle}deg`);
+      currentAngle += angle;
+    }
+  });
+  const ringBackground = ringParts.length
+    ? `conic-gradient(${ringParts.join(', ')}, rgba(148,163,184,.18) ${currentAngle}deg 360deg)`
+    : 'conic-gradient(rgba(148,163,184,.18) 0deg 360deg)';
   const timerTargetSeconds = Math.max(60, Number(timer.targetMinutes || DEFAULT_TIMER_MINUTES) * 60);
   const timerPct = Math.min(100, (liveTimerSeconds / timerTargetSeconds) * 100);
   const remainingSeconds = Math.max(0, timerTargetSeconds - liveTimerSeconds);
+  const timerStatus = timer.running ? 'Running' : liveTimerSeconds > 0 ? 'Paused' : 'Ready';
 
   useEffect(() => {
     setGoalInput(minutesToTimeInput(timer.targetMinutes));
@@ -492,22 +511,46 @@ function Dashboard({ data, planner, progressValue, doneCount, totalTopics, total
             {['All', 'Pending', 'Completed', 'Flagged'].map((filter) => <button key={filter} className={statusFilter === filter ? 'active' : ''} onClick={() => setStatusFilter(filter)}>{filter}</button>)}
           </div>
         </div>
-        <div className="progressBlock">
-          <div className="ring" style={{ '--p': `${progressValue * 3.6}deg` }}><strong>{percentText(progressValue)}</strong><span>Completed</span></div>
+        <div className="progressBlock polishedProgress">
+          <div className="ring multiRing" style={{ background: ringBackground }}><strong>{percentText(progressValue)}</strong><span>Completed</span></div>
           <div className="subjectBars">
-            {Object.entries(planner).map(([subject, chapters]) => {
-              const topics = chapters.flatMap((chapter) => chapter.topics);
-              const count = topics.filter((topic) => data.topicsDone?.[topic.id]).length;
-              const pct = percentNumber(count, topics.length);
-              return <button key={subject} className={subjectFilter === subject ? 'subjectBar active' : 'subjectBar'} onClick={() => setSubjectFilter(subjectFilter === subject ? 'All' : subject)}><b>{subject}</b><div className="bar"><span style={{ width: `${pct}%` }} /></div><strong>{percentText(pct)}</strong><small>{count} / {topics.length} topics</small></button>;
-            })}
+            {subjectStats.map((stat) => (
+              <button key={stat.subject} className={subjectFilter === stat.subject ? 'subjectBar active' : 'subjectBar'} onClick={() => setSubjectFilter(subjectFilter === stat.subject ? 'All' : stat.subject)}>
+                <b style={{ color: stat.color }}>{stat.subject}</b>
+                <div className="bar"><span style={{ width: `${stat.pct}%`, background: stat.color }} /></div>
+                <strong style={{ color: stat.color }}>{percentText(stat.pct)}</strong>
+                <small>{stat.count} / {stat.topics.length} topics</small>
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="grid3 tightGrid">
-        <div className="card timerCard"><h3><Clock size={19}/> Today's Study Time</h3><div className="timerDisplay">{clockText(liveTimerSeconds)}</div><p className="muted">Goal: {minutesText(timer.targetMinutes || DEFAULT_TIMER_MINUTES)} • Remaining: {clockText(remainingSeconds)}</p><div className="timerProgress"><span style={{ width: `${timerPct}%` }} /></div><label className="timerGoal"><span>Set focus timer</span><input type="time" value={goalInput} onChange={(e) => setGoalInput(e.target.value)} /></label><div className="btnRow timerBtns"><button className="primary" onClick={() => startStudyTimer(timeInputToMinutes(goalInput))}>{timer.running ? 'Running' : liveTimerSeconds > 0 ? 'Resume' : 'Start'}</button><button onClick={pauseStudyTimer} disabled={!timer.running}>Stop</button><button onClick={resetStudyTimer}>Reset</button></div></div>
-        <div className="card focusCard"><h3>Today’s Focus</h3><div className="focusItem"><span>Next pending topic</span><b>{nextPending ? nextPending.topic.title : 'All visible topics completed'}</b><small>{nextPending ? `${nextPending.subject} • ${nextPending.chapter.title}` : 'Use filters or add more practice.'}</small></div><div className="focusItem"><span>Priority topic</span><b>{nextFlagged ? nextFlagged.topic.title : 'No flagged topic yet'}</b><small>{nextFlagged ? `${nextFlagged.subject} • ${nextFlagged.chapter.title}` : 'Tap the star on any topic to flag it.'}</small></div><button onClick={() => setStatusFilter('Pending')}>Show pending topics</button></div>
+      <div className="grid3 tightGrid dashboardUtilityGrid">
+        <div className="card timerCard upgradedTimer">
+          <div className="timerHeader"><h3><Clock size={19}/> Today's Study Time</h3><span className={`statusBadge ${timer.running ? 'running' : liveTimerSeconds > 0 ? 'paused' : ''}`}>{timerStatus}</span></div>
+          <div className="timerDisplay">{clockText(liveTimerSeconds)}</div>
+          <div className="timerMeta"><span>Goal: <b>{minutesText(timer.targetMinutes || DEFAULT_TIMER_MINUTES)}</b></span><span>Remaining: <b>{clockText(remainingSeconds)}</b></span></div>
+          <div className="timerProgress"><span style={{ width: `${timerPct}%` }} /></div>
+          <div className="presetGoals">
+            {[25, 50, 90, 150].map((m) => <button key={m} onClick={() => setGoalInput(minutesToTimeInput(m))}>{m === 150 ? '2h 30m' : `${m}m`}</button>)}
+          </div>
+          <label className="timerGoal"><span>Custom focus timer</span><input type="time" value={goalInput} onChange={(e) => setGoalInput(e.target.value)} /></label>
+          <div className="btnRow timerBtns"><button className="primary" onClick={() => startStudyTimer(timeInputToMinutes(goalInput))}>{timer.running ? 'Running' : liveTimerSeconds > 0 ? 'Resume' : 'Start'}</button><button onClick={pauseStudyTimer} disabled={!timer.running}>Pause</button><button onClick={resetStudyTimer}>Reset</button></div>
+        </div>
+        <div className="card nextTopicsCard">
+          <div className="between"><h3>Next Topics to Complete</h3><button className="miniLink" onClick={() => setStatusFilter('Pending')}>View all</button></div>
+          <p className="muted compactText">Use this card as your real checklist for the next study session.</p>
+          <div className="nextTopicList">
+            {nextActionTopics.length === 0 ? <p className="empty">All visible topics are completed. Switch class/filters or add revision tasks.</p> : nextActionTopics.map(({ subject, chapter, topic }) => (
+              <div className="nextTopicItem" key={topic.id}>
+                <button className="topicCheck" onClick={() => toggleTopic(topic, chapter.title)}><Circle size={18}/></button>
+                <div><b>{topic.title}</b><small>{subject} • {chapter.title}</small></div>
+                <button title="Flag topic" onClick={() => toggleFlagTopic(topic)} className={data.topicsFlagged?.[topic.id] ? 'flagged topicStar' : 'topicStar'}><Star size={15}/></button>
+              </div>
+            ))}
+          </div>
+        </div>
         <div className="card"><h3>Quick Stats</h3><div className="quickStat"><span>Topics Completed</span><b>{doneCount} / {totalTopics}</b></div><div className="quickStat"><span>Chapters Loaded</span><b>{totalChapters}</b></div><div className="quickStat"><span>Progress</span><b>{percentText(progressValue)}</b></div><div className="quickStat"><span>PYQs Solved</span><b>{pyqSolved}</b></div><div className="quickStat"><span>Avg. Study Time / Day</span><b>{minutesText(avgMinutes)}</b></div></div>
       </div>
 
