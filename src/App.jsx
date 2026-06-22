@@ -567,11 +567,11 @@ const CSS = `
 
 .jee-app {
   --ink:#14233B; --ink-soft:#5B6B82; --bg:#EAF1F6; --card:#FFFFFF; --border:#D7E3EC;
-  font-family:'Inter',sans-serif; color:var(--ink); max-width:420px; margin:0 auto;
+  font-family:'Inter',sans-serif; color:var(--ink); width:100%; max-width:none; margin:0;
   background: linear-gradient(rgba(47,111,237,0.05) 1px,transparent 1px),
               linear-gradient(90deg,rgba(47,111,237,0.05) 1px,transparent 1px), var(--bg);
   background-size:18px 18px,18px 18px,100% 100%;
-  border-radius:20px; padding:22px 18px 16px; box-sizing:border-box;
+  border-radius:22px; padding:22px 18px 16px; box-sizing:border-box;
 }
 .jee-app * { box-sizing:border-box; }
 .jee-app button { transition:transform .12s ease; }
@@ -723,18 +723,32 @@ const CSS = `
 
 
 const PLATFORM_TABS = [
-  { id: "dashboard", label: "Dashboard" },
-  { id: "pyq", label: "PYQ" },
-  { id: "material", label: "Study Material" },
-  { id: "tests", label: "Tests" },
-  { id: "ai", label: "AI Tutor" },
-  { id: "profile", label: "Profile" },
+  { id: "dashboard", label: "Dashboard", section: "LEARN ONLINE", icon: "⌂" },
+  { id: "batches", label: "Batches", section: "STUDY PACKS", icon: "▣" },
+  { id: "pyq", label: "PYQ Practice", section: "STUDY PACKS", icon: "π" },
+  { id: "material", label: "Library", section: "STUDY PACKS", icon: "▤" },
+  { id: "tests", label: "Test Series", section: "STUDY PACKS", icon: "✓" },
+  { id: "ai", label: "AI Tutor", section: "EXPLORE", icon: "✦" },
+  { id: "profile", label: "Profile", section: "ACCOUNT", icon: "☻" },
+];
+
+const COURSE_CARDS = [
+  { title: "Lakshya JEE 2027", label: "Class 12 JEE", color: "#dcfce7", accent: "#16a34a", line1: "JEE Main + Advanced structured prep", line2: "Syllabus tracker, PYQ plan and weekly tests" },
+  { title: "Lakshya JEE 2.0 2027", label: "Class 12 JEE", color: "#dbeafe", accent: "#2563eb", line1: "Focused bridge course for backlogs", line2: "Chapter targets and revision queue" },
+  { title: "Vidyapeeth Self Study", label: "Offline + Online", color: "#111827", accent: "#f97316", line1: "Self-study dashboard for disciplined prep", line2: "Daily minutes, streak and high-weightage chapters", dark: true },
+];
+
+const EXPLORE_CARDS = [
+  { title: "Video Lectures", icon: "▶", color: "#fef3c7" },
+  { title: "Data Analytics", icon: "◔", color: "#dbeafe" },
+  { title: "All PC Courses", icon: "⌘", color: "#ede9fe" },
+  { title: "Coding & Web", icon: "{ }", color: "#fce7f3" },
 ];
 
 const MATERIALS = [
-  { title: "Physics Formula Sheet", tag: "Coming soon", detail: "Mechanics, Electrostatics, Optics, Modern Physics quick revision." },
-  { title: "Chemistry Short Notes", tag: "Coming soon", detail: "Physical formulas, Organic named reactions, Inorganic NCERT points." },
-  { title: "Maths Formula Bank", tag: "Coming soon", detail: "Calculus, Coordinate Geometry, Algebra, Vectors and 3D." },
+  { title: "Physics Formula Sheet", tag: "Free", detail: "Mechanics, Electrostatics, Optics, Modern Physics quick revision." },
+  { title: "Chemistry Short Notes", tag: "Soon", detail: "Physical formulas, Organic named reactions, Inorganic NCERT points." },
+  { title: "Maths Formula Bank", tag: "Soon", detail: "Calculus, Coordinate Geometry, Algebra, Vectors and 3D." },
   { title: "High Weightage Checklist", tag: "Free", detail: "Priority chapters for faster revision and daily planning." },
 ];
 
@@ -745,140 +759,260 @@ const PYQ_SETS = [
   { subject: "Maths", chapter: "Integration", count: 35, level: "High" },
 ];
 
-function PlatformPage({ title, subtitle, children }) {
+function PwCard({ children, className = "" }) {
+  return <div className={`pw-card ${className}`}>{children}</div>;
+}
+
+function PageHero({ eyebrow="JEE BLUEPRINT", title, subtitle }) {
   return (
-    <div style={{ maxWidth: 980, margin: "0 auto", padding: "20px 14px 28px", fontFamily: "Inter, sans-serif", color: "#14233B" }}>
-      <div style={{ background: "linear-gradient(135deg,#E7EEFD,#EAF1F6)", border: "1px solid #D7E3EC", borderRadius: 18, padding: 18, marginBottom: 16 }}>
-        <div style={{ fontSize: 11, letterSpacing: ".14em", fontWeight: 800, color: "#2F6FED", fontFamily: "IBM Plex Mono, monospace" }}>JEE BLUEPRINT</div>
-        <h1 style={{ margin: "6px 0 4px", fontFamily: "Space Grotesk, sans-serif", fontSize: 28 }}>{title}</h1>
-        <p style={{ margin: 0, color: "#5B6B82", lineHeight: 1.5 }}>{subtitle}</p>
-      </div>
-      {children}
+    <div className="pw-page-hero">
+      <span>{eyebrow}</span>
+      <h1>{title}</h1>
+      <p>{subtitle}</p>
     </div>
   );
 }
 
-function CardGrid({ children }) {
-  return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>{children}</div>;
+function ExploreStrip() {
+  return (
+    <section className="pw-section">
+      <div className="pw-section-title-row"><h2>Explore Blueprint</h2><button>View all</button></div>
+      <div className="pw-explore-row">
+        {EXPLORE_CARDS.map((c) => (
+          <PwCard key={c.title} className="pw-explore-card">
+            <div className="pw-explore-icon" style={{ background: c.color }}>{c.icon}</div>
+            <strong>{c.title}</strong>
+          </PwCard>
+        ))}
+      </div>
+    </section>
+  );
 }
 
-function SimpleCard({ title, meta, children }) {
+function CourseCard({ course }) {
   return (
-    <div style={{ background: "white", border: "1px solid #D7E3EC", borderRadius: 14, padding: 16, boxShadow: "0 3px 12px rgba(20,35,59,0.06)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontFamily: "Space Grotesk, sans-serif" }}>{title}</h3>
-        {meta && <span style={{ fontSize: 10, fontFamily: "IBM Plex Mono, monospace", color: "#2F6FED", background: "#E7EEFD", borderRadius: 999, padding: "4px 8px", whiteSpace: "nowrap" }}>{meta}</span>}
+    <PwCard className={`pw-course-card ${course.dark ? "pw-course-dark" : ""}`}>
+      <div className="pw-course-art" style={{ background: course.color }}>
+        <div className="pw-teacher-row">
+          <span /> <span /> <span /> <span /> <span />
+        </div>
+        <b>{course.title}</b>
       </div>
-      <div style={{ marginTop: 10, fontSize: 13, color: "#5B6B82", lineHeight: 1.55 }}>{children}</div>
-    </div>
+      <div className="pw-course-body">
+        <div className="pw-course-label">{course.label}<span>HINGLISH</span></div>
+        <h3>{course.title}</h3>
+        <p>▣ {course.line1}</p>
+        <p>◷ {course.line2}</p>
+      </div>
+    </PwCard>
+  );
+}
+
+function BatchesPage() {
+  return (
+    <main className="pw-content-inner">
+      <div className="pw-content-top"><h1>Batches</h1><div className="pw-search">⌕ <span>Search for JEE batches, PYQ, tests</span></div></div>
+      <ExploreStrip />
+      <section className="pw-section">
+        <div className="pw-section-title-row"><h2>Popular Courses</h2><button>Compare plans</button></div>
+        <div className="pw-course-grid">{COURSE_CARDS.map((c) => <CourseCard key={c.title} course={c} />)}</div>
+      </section>
+    </main>
   );
 }
 
 function PyqPage() {
   return (
-    <PlatformPage title="PYQ Practice" subtitle="Chapter-wise JEE Main + Advanced PYQ section. Start with limited free sets, then make full solutions Pro.">
-      <CardGrid>
+    <main className="pw-content-inner">
+      <PageHero title="PYQ Practice" subtitle="Chapter-wise JEE Main + Advanced PYQ section. Start with free sets, then make detailed solutions Pro." />
+      <div className="pw-grid-four">
         {PYQ_SETS.map((p) => (
-          <SimpleCard key={p.subject + p.chapter} title={p.chapter} meta={p.subject}>
-            <div>{p.count} questions planned</div>
-            <div>Difficulty: {p.level}</div>
-            <button style={{ marginTop: 12, width: "100%", border: "none", background: "#2F6FED", color: "white", borderRadius: 10, padding: "10px 12px", fontWeight: 700, cursor: "pointer" }}>
-              Open set
-            </button>
-          </SimpleCard>
+          <PwCard key={p.subject + p.chapter} className="pw-action-card">
+            <span className="pw-pill">{p.subject}</span>
+            <h3>{p.chapter}</h3>
+            <p>{p.count} questions planned</p>
+            <p>Difficulty: {p.level}</p>
+            <button>Open set</button>
+          </PwCard>
         ))}
-      </CardGrid>
-    </PlatformPage>
+      </div>
+    </main>
   );
 }
 
 function MaterialPage() {
   return (
-    <PlatformPage title="Study Material" subtitle="Add your own notes, formula sheets, revision checklists and chapter resources here.">
-      <CardGrid>
+    <main className="pw-content-inner">
+      <PageHero title="Library" subtitle="Formula sheets, revision checklists, chapter resources and your own notes in one place." />
+      <div className="pw-grid-four">
         {MATERIALS.map((m) => (
-          <SimpleCard key={m.title} title={m.title} meta={m.tag}>{m.detail}</SimpleCard>
+          <PwCard key={m.title} className="pw-action-card">
+            <span className="pw-pill">{m.tag}</span>
+            <h3>{m.title}</h3>
+            <p>{m.detail}</p>
+            <button>Open</button>
+          </PwCard>
         ))}
-      </CardGrid>
-      <div style={{ marginTop: 14, background: "#FFF8E1", border: "1px dashed #E0BD63", borderRadius: 12, padding: 14, color: "#7A5B12", fontSize: 13 }}>
-        Note: copyrighted coaching PDFs/books upload करू नकोस. स्वतःचे notes, official/public papers किंवा permission असलेले material वापर.
       </div>
-    </PlatformPage>
+      <div className="pw-warning">Copyrighted coaching PDFs/books upload करू नकोस. स्वतःचे notes किंवा official/public papers वापर.</div>
+    </main>
   );
 }
 
 function TestsPage() {
   return (
-    <PlatformPage title="Tests" subtitle="Mock tests and chapter tests will come here. First version can store marks manually.">
-      <CardGrid>
-        <SimpleCard title="Chapter Test" meta="Free">10-question quick tests for one chapter. Score tracking coming next.</SimpleCard>
-        <SimpleCard title="Full Mock" meta="Pro idea">JEE Main style timed mock test with performance analysis.</SimpleCard>
-        <SimpleCard title="Weak Topic Test" meta="AI idea">Generate tests from chapters marked as revise.</SimpleCard>
-      </CardGrid>
-    </PlatformPage>
+    <main className="pw-content-inner">
+      <PageHero title="Test Series" subtitle="Chapter tests and mock tests. First version can store marks manually, next version can auto-score." />
+      <div className="pw-grid-three">
+        <PwCard className="pw-action-card"><span className="pw-pill">Free</span><h3>Chapter Test</h3><p>10-question quick tests for one chapter.</p><button>Start</button></PwCard>
+        <PwCard className="pw-action-card"><span className="pw-pill">Pro idea</span><h3>Full Mock</h3><p>JEE Main style timed mock test with performance analysis.</p><button>Preview</button></PwCard>
+        <PwCard className="pw-action-card"><span className="pw-pill">AI idea</span><h3>Weak Topic Test</h3><p>Generate tests from chapters marked as revise.</p><button>Coming soon</button></PwCard>
+      </div>
+    </main>
   );
 }
 
 function AiPage() {
   return (
-    <PlatformPage title="AI Tutor" subtitle="AI doubt solver will be connected later through secure backend. API key frontend मध्ये ठेवायची नाही.">
-      <SimpleCard title="AI Coming Soon" meta="Secure backend needed">
-        Next step: AWS Function/Lambda किंवा Bedrock/Claude backend. Free users: 5 doubts/day. Pro users: higher limit.
-      </SimpleCard>
-    </PlatformPage>
+    <main className="pw-content-inner">
+      <PageHero title="AI Tutor" subtitle="AI doubt solver will connect through secure AWS backend. API key frontend मध्ये ठेवायची नाही." />
+      <PwCard className="pw-ai-card">
+        <div><span className="pw-pill">Secure backend needed</span><h3>AI Coming Soon</h3><p>Next step: AWS Function/Lambda + Claude/Bedrock backend. Free users: 5 doubts/day. Pro users: higher limit.</p></div>
+        <button>Setup later</button>
+      </PwCard>
+    </main>
   );
 }
 
 function ProfilePage() {
   return (
-    <PlatformPage title="Profile" subtitle="Student profile, target exam and plan details.">
-      <CardGrid>
-        <SimpleCard title="Student Plan" meta="Free">Current plan: Free. Pro plan can unlock full PYQ, solutions and AI planner.</SimpleCard>
-        <SimpleCard title="Target" meta="JEE">Target exam date is currently set inside Dashboard.</SimpleCard>
-        <SimpleCard title="Progress Sync" meta="Next step">Right now progress is browser localStorage. Later we can save per-user data in cloud database.</SimpleCard>
-      </CardGrid>
-    </PlatformPage>
+    <main className="pw-content-inner">
+      <PageHero title="Profile" subtitle="Student profile, target exam and plan details." />
+      <div className="pw-grid-three">
+        <PwCard className="pw-action-card"><span className="pw-pill">Free</span><h3>Student Plan</h3><p>Current plan: Free. Pro can unlock full PYQ, solutions and AI planner.</p></PwCard>
+        <PwCard className="pw-action-card"><span className="pw-pill">JEE</span><h3>Target</h3><p>Target exam date is currently set inside Dashboard.</p></PwCard>
+        <PwCard className="pw-action-card"><span className="pw-pill">Next step</span><h3>Progress Sync</h3><p>Right now progress is browser localStorage. Later save per-user data in cloud database.</p></PwCard>
+      </div>
+    </main>
   );
 }
 
+function PwSidebar({ activeTab, setActiveTab }) {
+  const sections = ["LEARN ONLINE", "STUDY PACKS", "EXPLORE", "ACCOUNT"];
+  return (
+    <aside className="pw-sidebar">
+      <div className="pw-brand"><div className="pw-logo">B</div><strong>Blueprint</strong></div>
+      {sections.map(section => (
+        <div key={section} className="pw-menu-section">
+          <span className="pw-menu-label">{section}</span>
+          {PLATFORM_TABS.filter(t => t.section === section).map(tab => (
+            <button key={tab.id} className={`pw-menu-item ${activeTab === tab.id ? "active" : ""}`} onClick={() => setActiveTab(tab.id)}>
+              <span>{tab.icon}</span>{tab.label}
+            </button>
+          ))}
+        </div>
+      ))}
+    </aside>
+  );
+}
+
+function PwTopbar({ activeLabel }) {
+  return (
+    <header className="pw-topbar">
+      <div><span>12th • IIT JEE</span><strong>{activeLabel}</strong></div>
+      <div className="pw-top-search">⌕ Search for chapters, PYQ, notes</div>
+      <button className="pw-plan-btn">Free Plan</button>
+    </header>
+  );
+}
+
+const PW_STYLE = `
+.pw-platform{min-height:100vh;background:#f7f8fb;color:#101827;font-family:Inter,system-ui,sans-serif;display:grid;grid-template-columns:270px 1fr;}
+.pw-sidebar{background:#fff;border-right:1px solid #e5e7eb;min-height:100vh;position:sticky;top:0;align-self:start;padding:18px 0;}
+.pw-brand{height:52px;display:flex;align-items:center;gap:12px;padding:0 26px 18px;border-bottom:1px solid #eef2f7;font-size:20px;}
+.pw-logo{width:34px;height:34px;border-radius:50%;border:2px solid #111827;display:grid;place-items:center;font-weight:900;background:#f8fafc;}
+.pw-menu-section{padding:22px 12px 0;}
+.pw-menu-label{display:block;padding:0 20px 10px;color:#8b95a7;font-size:12px;font-weight:800;letter-spacing:.06em;}
+.pw-menu-item{width:100%;height:48px;border:0;background:transparent;border-radius:0;display:flex;align-items:center;gap:14px;padding:0 18px;color:#111827;font-weight:800;font-size:15px;cursor:pointer;border-left:4px solid transparent;}
+.pw-menu-item span{width:22px;text-align:center;color:#4b5563;}
+.pw-menu-item.active{background:#ebe8ff;color:#4f46e5;border-left-color:#635bff;}
+.pw-main{min-width:0;}
+.pw-topbar{height:64px;background:#111820;color:white;display:flex;align-items:center;gap:18px;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:30;}
+.pw-topbar div:first-child{display:flex;align-items:center;gap:12px;min-width:220px;}
+.pw-topbar div:first-child span{font-size:13px;color:#cbd5e1;border:1px solid rgba(255,255,255,.16);padding:8px 12px;border-radius:10px;}
+.pw-topbar div:first-child strong{font-size:16px;white-space:nowrap;}
+.pw-top-search{height:42px;background:#fff;color:#9ca3af;border:1px solid #d1d5db;border-radius:8px;display:flex;align-items:center;max-width:420px;flex:1;padding:0 16px;font-size:15px;}
+.pw-plan-btn{border:0;background:#f97316;color:#fff;border-radius:12px;font-weight:900;padding:11px 15px;}
+.pw-content-inner{max-width:1220px;margin:0 auto;padding:34px 34px 60px;}
+.pw-content-top{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:28px;}
+.pw-content-top h1{font-size:26px;margin:0;}
+.pw-search{height:52px;min-width:320px;border:1px solid #d7dde8;border-radius:7px;background:#fff;display:flex;align-items:center;gap:12px;color:#8b95a7;padding:0 16px;font-size:16px;}
+.pw-section{margin-bottom:42px;}
+.pw-section-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.pw-section-title-row h2{font-size:32px;margin:0;letter-spacing:.01em;}
+.pw-section-title-row button{border:0;background:#eef2ff;color:#4f46e5;border-radius:999px;padding:9px 13px;font-weight:900;}
+.pw-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 8px 20px rgba(15,23,42,.04);}
+.pw-explore-row{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:18px;overflow:hidden;}
+.pw-explore-card{height:108px;display:flex;align-items:center;gap:20px;padding:0 18px;font-size:21px;white-space:nowrap;overflow:hidden;}
+.pw-explore-icon{width:70px;height:70px;border-radius:14px;display:grid;place-items:center;font-weight:900;color:#111827;font-size:22px;flex:0 0 auto;}
+.pw-course-grid{display:grid;grid-template-columns:repeat(3,minmax(260px,1fr));gap:22px;}
+.pw-course-card{overflow:hidden;border-radius:16px;}
+.pw-course-art{height:224px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;position:relative;}
+.pw-course-art b{font-size:31px;letter-spacing:.04em;text-transform:uppercase;color:#14532d;}
+.pw-course-dark .pw-course-art b{color:white;}
+.pw-teacher-row{display:flex;align-items:flex-end;gap:7px;align-self:center;margin-top:auto;}
+.pw-teacher-row span{width:44px;height:68px;border-radius:28px 28px 10px 10px;background:linear-gradient(#1f2937,#111827);display:block;box-shadow:0 -10px 0 #fde68a inset;}
+.pw-course-body{padding:18px;}
+.pw-course-label{display:flex;align-items:center;justify-content:space-between;color:#f97316;font-weight:900;margin-bottom:10px;}
+.pw-course-label span{font-size:12px;color:#111827;border:1px solid #d1d5db;border-radius:5px;padding:5px 9px;background:white;}
+.pw-course-body h3{font-size:22px;margin:0 0 12px;}
+.pw-course-body p{margin:8px 0;color:#4b5563;font-size:15px;}
+.pw-course-dark{background:#111820;color:white;border-color:#111820;}
+.pw-course-dark .pw-course-body p{color:#d1d5db;}
+.pw-page-hero{background:linear-gradient(135deg,#edf4ff,#f8fbff);border:1px solid #dbe3ef;border-radius:22px;padding:26px;margin-bottom:22px;}
+.pw-page-hero span{font-size:12px;letter-spacing:.22em;color:#2563eb;font-weight:900;}
+.pw-page-hero h1{font-size:36px;margin:10px 0 10px;}
+.pw-page-hero p{font-size:18px;color:#607086;margin:0;line-height:1.6;}
+.pw-grid-four{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:16px;}
+.pw-grid-three{display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:16px;}
+.pw-action-card{padding:20px;position:relative;min-height:190px;}
+.pw-action-card h3{font-size:21px;margin:10px 0;color:#111827;}
+.pw-action-card p{color:#4b5563;line-height:1.55;margin:8px 0;}
+.pw-action-card button,.pw-ai-card button{width:100%;border:0;border-radius:10px;background:#2563eb;color:white;padding:13px 14px;font-weight:900;margin-top:12px;cursor:pointer;}
+.pw-pill{display:inline-flex;background:#eef2ff;color:#2563eb;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:900;}
+.pw-warning{margin-top:18px;background:#fff8e1;border:1px dashed #e0bd63;border-radius:14px;padding:16px;color:#7a5b12;}
+.pw-ai-card{padding:24px;display:flex;align-items:center;justify-content:space-between;gap:18px;}
+.pw-ai-card h3{font-size:24px;margin:12px 0 8px;}
+.pw-ai-card p{color:#4b5563;margin:0;}
+.pw-ai-card button{width:auto;margin:0;min-width:150px;}
+.pw-dashboard-wrap{max-width:920px;margin:0 auto;}
+.pw-dashboard-wrap .jee-app{box-shadow:0 10px 30px rgba(15,23,42,.06);border:1px solid #dbe3ef;}
+@media(max-width:1100px){.pw-platform{grid-template-columns:1fr}.pw-sidebar{position:relative;min-height:auto;display:flex;overflow-x:auto;padding:10px;border-right:0;border-bottom:1px solid #e5e7eb}.pw-brand{display:none}.pw-menu-section{display:flex;align-items:center;gap:8px;padding:0}.pw-menu-label{display:none}.pw-menu-item{height:40px;border-left:0;border-radius:999px;white-space:nowrap;padding:0 14px}.pw-topbar{top:0}.pw-explore-row,.pw-course-grid,.pw-grid-four{grid-template-columns:repeat(2,minmax(220px,1fr))}}
+@media(max-width:720px){.pw-topbar{height:auto;align-items:stretch;flex-direction:column;padding:14px}.pw-topbar div:first-child{min-width:0}.pw-top-search{max-width:none;min-width:0;width:100%;box-sizing:border-box}.pw-content-inner{padding:22px 14px 40px}.pw-content-top{align-items:flex-start;flex-direction:column}.pw-search{min-width:0;width:100%;box-sizing:border-box}.pw-explore-row,.pw-course-grid,.pw-grid-four,.pw-grid-three{grid-template-columns:1fr}.pw-section-title-row h2{font-size:25px}.pw-course-art{height:180px}.pw-page-hero h1{font-size:28px}.pw-ai-card{display:block}.pw-ai-card button{width:100%;margin-top:16px}}
+`;
+
 export default function JeeBlueprint() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const activeLabel = PLATFORM_TABS.find((t) => t.id === activeTab)?.label || "Dashboard";
   const renderTab = () => {
-    if (activeTab === "dashboard") return <JeeBlueprintDashboard />;
+    if (activeTab === "dashboard") return <main className="pw-content-inner"><div className="pw-content-top"><h1>Dashboard</h1><div className="pw-search">⌕ Search chapters and doubts</div></div><div className="pw-dashboard-wrap"><JeeBlueprintDashboard /></div></main>;
+    if (activeTab === "batches") return <BatchesPage />;
     if (activeTab === "pyq") return <PyqPage />;
     if (activeTab === "material") return <MaterialPage />;
     if (activeTab === "tests") return <TestsPage />;
     if (activeTab === "ai") return <AiPage />;
     if (activeTab === "profile") return <ProfilePage />;
-    return <JeeBlueprintDashboard />;
+    return <BatchesPage />;
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#EAF1F6" }}>
-      <div style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(234,241,246,0.94)", backdropFilter: "blur(10px)", borderBottom: "1px solid #D7E3EC" }}>
-        <div style={{ maxWidth: 980, margin: "0 auto", padding: "10px 14px", display: "flex", gap: 8, overflowX: "auto" }}>
-          {PLATFORM_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                border: "1px solid #D7E3EC",
-                background: activeTab === tab.id ? "#2F6FED" : "white",
-                color: activeTab === tab.id ? "white" : "#14233B",
-                borderRadius: 999,
-                padding: "8px 12px",
-                fontSize: 12,
-                fontWeight: 800,
-                whiteSpace: "nowrap",
-                cursor: "pointer"
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+    <div className="pw-platform">
+      <style>{PW_STYLE}</style>
+      <PwSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <div className="pw-main">
+        <PwTopbar activeLabel={activeLabel} />
+        {renderTab()}
       </div>
-      {renderTab()}
     </div>
   );
 }
