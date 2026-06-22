@@ -724,7 +724,6 @@ const CSS = `
 
 const PLATFORM_TABS = [
   { id: "dashboard", label: "Dashboard", section: "LEARN ONLINE", icon: "⌂" },
-  { id: "batches", label: "Batches", section: "STUDY PACKS", icon: "▣" },
   { id: "pyq", label: "PYQ Practice", section: "STUDY PACKS", icon: "π" },
   { id: "material", label: "Library", section: "STUDY PACKS", icon: "▤" },
   { id: "tests", label: "Test Series", section: "STUDY PACKS", icon: "✓" },
@@ -996,13 +995,12 @@ export default function JeeBlueprint() {
   const activeLabel = PLATFORM_TABS.find((t) => t.id === activeTab)?.label || "Dashboard";
   const renderTab = () => {
     if (activeTab === "dashboard") return <main className="pw-content-inner"><div className="pw-content-top"><h1>Dashboard</h1><div className="pw-search">⌕ Search chapters and doubts</div></div><div className="pw-dashboard-wrap"><JeeBlueprintDashboard /></div></main>;
-    if (activeTab === "batches") return <BatchesPage />;
     if (activeTab === "pyq") return <PyqPage />;
     if (activeTab === "material") return <MaterialPage />;
     if (activeTab === "tests") return <TestsPage />;
     if (activeTab === "ai") return <AiPage />;
     if (activeTab === "profile") return <ProfilePage />;
-    return <BatchesPage />;
+    return <main className="pw-content-inner"><div className="pw-content-top"><h1>Dashboard</h1><div className="pw-search">⌕ Search chapters and doubts</div></div><div className="pw-dashboard-wrap"><JeeBlueprintDashboard /></div></main>;
   };
 
   return (
