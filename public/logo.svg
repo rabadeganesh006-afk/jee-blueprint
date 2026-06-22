@@ -1,0 +1,17 @@
+<svg width="320" height="96" viewBox="0 0 320 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="96" fill="none"/>
+  <g transform="translate(14 12)">
+    <path d="M14 55 L43 26 L63 33 L35 62 Z" fill="#2F6FED"/>
+    <path d="M28 62 L60 29 L76 41 L47 69 Z" fill="#60A5FA" opacity="0.85"/>
+    <path d="M51 7 C70 12 80 24 84 43 C65 39 54 29 51 7Z" fill="#2F6FED"/>
+    <path d="M60 15 C70 20 75 27 78 37 C68 34 61 27 60 15Z" fill="#93C5FD"/>
+    <path d="M49 8 L39 33 L58 24 Z" fill="#0F172A" opacity="0.18"/>
+    <path d="M47 63 C37 72 22 73 8 67 C22 66 32 60 39 49 Z" fill="#38BDF8" opacity="0.75"/>
+    <path d="M44 68 C33 80 17 81 2 75 C20 73 31 65 39 54 Z" fill="#DBEAFE" opacity="0.95"/>
+    <circle cx="57" cy="30" r="4" fill="white" opacity="0.85"/>
+    <path d="M9 76 H81" stroke="#2563EB" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+    <path d="M10 75 L85 75" stroke="#93C5FD" stroke-width="1.5" stroke-dasharray="5 4"/>
+  </g>
+  <text x="112" y="42" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="800" fill="#0F172A">JEE</text>
+  <text x="112" y="74" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="800" fill="#2563EB">Blueprint</text>
+</svg>

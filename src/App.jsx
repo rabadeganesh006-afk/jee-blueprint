@@ -1,1017 +1,548 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Flame, ChevronDown, Check, RotateCcw, Calendar, X, RefreshCw,
-  Star, Pin, Clock, Sparkles, Send, Mic, MicOff, ImagePlus, Trash2,
+  BookOpen,
+  Bot,
+  CalendarDays,
+  CheckCircle2,
+  ChevronDown,
+  Clock3,
+  Crown,
+  Edit3,
+  Filter,
+  Home,
+  LogOut,
+  Mail,
+  Menu,
+  Moon,
+  Phone,
+  Rocket,
+  Save,
+  Search,
+  ShieldCheck,
+  Sun,
+  Target,
+  UserRound,
+  X,
 } from "lucide-react";
 
-const STORAGE_KEY = "jee-blueprint-data";
+const PROFILE_KEY = "jee-blueprint-profile-v7";
+const THEME_KEY = "jee-blueprint-theme-v7";
+const CLASS_KEY = "jee-blueprint-class-v7";
+const ACTIVE_KEY = "jee-blueprint-active-page-v7";
 
-const appStorage = {
-  async get(key) {
-    return { value: localStorage.getItem(key) };
-  },
-  async set(key, value) {
-    localStorage.setItem(key, value);
-    return { success: true };
-  },
+const classOptions = ["11th IIT JEE", "12th IIT JEE", "Dropper"];
+
+const defaultProfile = {
+  name: "Ganesh Rabade",
+  mobile: "7249712716",
+  email: "rabadeganesh0@gmail.com",
+  city: "Aurangabad",
+  className: "12th IIT JEE",
+  board: "MAHARASHTRA_STATE_BOARD",
+  targetExam: "IIT-JEE",
+  language: "English",
+  goal: "Get into IIT – Computer Science",
+  subjects: "Physics, Chemistry, Mathematics",
+  contentType: "Video Lectures, Notes, PYQs",
+  dailyStudyTime: "3–4 hours",
+  weakAreas: "Organic Chemistry, 3D Geometry",
+  bio: "Aspiring engineer with a focus on problem solving and concept clarity.",
 };
 
-const SYLLABUS = {
-  physics: {
-    label: "Physics", short: "PHY", accent: "#2F6FED", accentSoft: "#E7EEFD",
-    highWeight: ["Kinematics","Rotational Motion","Electrostatics","Current Electricity","Optics","Atoms & Nuclei"],
-    chapters: ["Units & Measurements","Kinematics","Laws of Motion","Work, Energy & Power","Rotational Motion","Gravitation","Properties of Matter","Thermodynamics","Kinetic Theory of Gases","Oscillations & Waves","Electrostatics","Current Electricity","Magnetic Effects of Current","EM Induction & AC","Optics","Dual Nature of Matter","Atoms & Nuclei","Electronic Devices"],
-  },
-  chemistry: {
-    label: "Chemistry", short: "CHE", accent: "#169E8B", accentSoft: "#E3F5F2",
-    highWeight: ["Chemical Bonding","Equilibrium","Coordination Compounds","p-Block Elements","Isomerism & GOC","Aldehydes, Ketones & Acids"],
-    chapters: ["Basic Concepts","Atomic Structure","Chemical Bonding","States of Matter","Thermodynamics","Equilibrium","Redox & Electrochemistry","Chemical Kinetics","Solutions","Periodicity","p-Block Elements","d & f Block Elements","Coordination Compounds","Isomerism & GOC","Hydrocarbons","Alcohols, Phenols & Ethers","Aldehydes, Ketones & Acids","Amines & Biomolecules"],
-  },
-  maths: {
-    label: "Maths", short: "MAT", accent: "#E0703A", accentSoft: "#FBEAE0",
-    highWeight: ["Matrices & Determinants","Integration","Straight Lines & Circles","Conic Sections","Vector Algebra","Probability & Statistics"],
-    chapters: ["Sets, Relations & Functions","Complex Numbers","Quadratic Equations","Sequences & Series","Permutations & Combinations","Binomial Theorem","Matrices & Determinants","Limits & Continuity","Differentiability","Applications of Derivatives","Integration","Differential Equations","Straight Lines & Circles","Conic Sections","3D Geometry","Vector Algebra","Probability & Statistics"],
-  },
+const syllabus = {
+  Physics: ["Units & Measurements", "Kinematics", "Laws of Motion", "Rotational Motion", "Current Electricity", "Optics", "Atoms & Nuclei"],
+  Chemistry: ["Basic Concepts", "Atomic Structure", "Chemical Bonding", "Equilibrium", "Organic Chemistry", "Coordination Compounds"],
+  Mathematics: ["Sets & Relations", "Quadratic Equations", "Matrices & Determinants", "Integration", "Vector Algebra", "3D Geometry"],
 };
 
-const DOUBT_SYSTEM_PROMPT = `You are Blueprint — an expert JEE (Main + Advanced) AI tutor for Physics, Chemistry, and Mathematics.
-
-LANGUAGE DETECTION RULE (Most Important):
-- Detect the language the student used to ask the question.
-- If student wrote in Hindi (Devanagari or Roman Hindi like "yeh kya hai", "samjhao", "kaise karte hain") => Answer fully in Hindi.
-- If student wrote in English => Answer in English.
-- If student mixed Hindi+English (Hinglish) => Answer in Hinglish.
-- NEVER use Marathi in your responses. If student writes in Marathi, respond in Hindi.
-- NEVER use any other language except English and Hindi.
-
-ACCURACY RULES:
-- Never make calculation errors. Double-check every numerical step before writing.
-- Easy/simple questions => give short, crisp, direct answers. Do not over-explain.
-- Hard JEE Advanced questions => give full rigorous step-by-step solution with clear reasoning.
-- Always state the formula or concept name at the start of solution.
-- If an image is provided, carefully read every symbol, number, diagram, and equation before solving.
-- If question is outside JEE Physics/Chemistry/Maths scope, politely redirect in the student's language.
-
-FORMAT: Plain text only. No asterisks, no dashes, no markdown. Use numbered steps (1. 2. 3.) for solutions. Use => for therefore/implies.`;
-
-const NUDGE_SYSTEM_PROMPT = `You are a JEE prep coach. Given a student's syllabus stats, write ONE specific motivating nudge for today. Max 22 words. English only. No greeting. No quotes. Plain text.`;
-
-const FALLBACK_NUDGES = [
-  "Pick your weakest subject and give it the first hour today.",
-  "Revise one flagged chapter before starting anything new.",
-  "Small consistent effort beats last-minute cramming every time.",
-  "Your streak is a habit. Protect it today.",
+const pyqSets = [
+  { title: "Current Electricity", subject: "Physics", questions: 25, difficulty: "Medium" },
+  { title: "Chemical Bonding", subject: "Chemistry", questions: 30, difficulty: "High" },
+  { title: "Matrices & Determinants", subject: "Mathematics", questions: 22, difficulty: "Medium" },
+  { title: "Integration", subject: "Mathematics", questions: 35, difficulty: "High" },
+  { title: "Rotational Motion", subject: "Physics", questions: 28, difficulty: "High" },
 ];
 
-function buildDefaultData() {
-  const subjects = {};
-  Object.keys(SYLLABUS).forEach((key) => {
-    subjects[key] = SYLLABUS[key].chapters.map((name, i) => ({ id: `${key}-${i}`, name, status: "todo" }));
+const studyMaterials = [
+  { title: "Physics Formula Sheet", text: "Mechanics, Electrostatics, Optics and Modern Physics quick revision.", tag: "Free" },
+  { title: "Chemistry Short Notes", text: "Organic named reactions, inorganic NCERT points and physical formulae.", tag: "Coming soon" },
+  { title: "Maths Formula Bank", text: "Calculus, coordinate geometry, algebra, vectors and 3D formulas.", tag: "Coming soon" },
+  { title: "High Weightage Checklist", text: "Priority chapters for faster revision and daily planning.", tag: "Free" },
+];
+
+const tests = [
+  { title: "Chapter Test", text: "10-question quick tests for one chapter. Score tracking coming next.", tag: "Free" },
+  { title: "Full Mock", text: "JEE Main style timed mock test with performance analysis.", tag: "Pro idea" },
+  { title: "Weak Topic Test", text: "Generate tests from chapters marked for revision.", tag: "AI idea" },
+];
+
+function loadJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? { ...fallback, ...JSON.parse(raw) } : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function firstName(profile, user) {
+  const fromProfile = profile?.name?.trim()?.split(/\s+/)?.[0];
+  if (fromProfile) return fromProfile;
+  const login = user?.signInDetails?.loginId || user?.username || "Student";
+  return login.split("@")[0] || "Student";
+}
+
+function classFromProfile(profile) {
+  if (classOptions.includes(profile.className)) return profile.className;
+  if (profile.className === "11") return "11th IIT JEE";
+  if (profile.className === "12") return "12th IIT JEE";
+  return "12th IIT JEE";
+}
+
+export default function JeeBlueprint({ user, signOut }) {
+  const [profile, setProfile] = useState(() => {
+    const p = loadJSON(PROFILE_KEY, defaultProfile);
+    const userEmail = user?.signInDetails?.loginId || p.email;
+    return { ...p, email: userEmail };
   });
-  return { examDate: null, streak: { count: 0, lastDate: null }, studyLog: {}, todayFocus: { date: null, ids: [] }, aiNudge: { date: null, text: "" }, subjects };
-}
+  const [active, setActive] = useState(() => localStorage.getItem(ACTIVE_KEY) || "dashboard");
+  const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || "light");
+  const [className, setClassName] = useState(() => localStorage.getItem(CLASS_KEY) || classFromProfile(profile));
+  const [query, setQuery] = useState("");
+  const [pageQuery, setPageQuery] = useState("");
+  const [classOpen, setClassOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
-function todayStr() { return new Date().toISOString().slice(0, 10); }
-function daysBetween(a, b) { return Math.ceil((new Date(b) - new Date(a)) / 86400000); }
-function subjectProgress(chapters) {
-  const done = chapters.filter((c) => c.status === "done" || c.status === "revise").length;
-  return chapters.length === 0 ? 0 : Math.round((done / chapters.length) * 100);
-}
-function prepPhase(cd) {
-  if (cd === null || cd < 0) return null;
-  if (cd <= 30) return { label: "Final Sprint", color: "#D9483A" };
-  if (cd <= 90) return { label: "Revision Phase", color: "#D99A2B" };
-  if (cd <= 180) return { label: "Building Speed", color: "#2F6FED" };
-  return { label: "Foundation Phase", color: "#169E8B" };
-}
-function lastNDays(n) {
-  return Array.from({ length: n }, (_, i) => new Date(Date.now() - (n - 1 - i) * 86400000).toISOString().slice(0, 10));
-}
-function buildStatsContext(data) {
-  const entries = Object.entries(data.subjects).map(([k, ch]) => ({ label: SYLLABUS[k].label, pct: subjectProgress(ch) }));
-  const weakest = entries.reduce((a, b) => (b.pct < a.pct ? b : a), entries[0]);
-  const overall = subjectProgress(Object.values(data.subjects).flat());
-  const countdown = data.examDate ? daysBetween(todayStr(), data.examDate) : null;
-  return `Overall: ${overall}%. ${entries.map(e => `${e.label} ${e.pct}%`).join(", ")}. Weakest: ${weakest.label}. Streak: ${data.streak.count} days. ${countdown !== null ? `Days left: ${countdown}.` : "No exam date."}`;
-}
+  useEffect(() => { localStorage.setItem(ACTIVE_KEY, active); }, [active]);
+  useEffect(() => { localStorage.setItem(THEME_KEY, theme); }, [theme]);
+  useEffect(() => {
+    localStorage.setItem(CLASS_KEY, className);
+    setProfile((prev) => ({ ...prev, className }));
+  }, [className]);
+  useEffect(() => { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }, [profile]);
 
-async function callClaude(system, userText, imageBase64 = null, imageMime = null) {
-  const endpoint = import.meta.env.VITE_AI_ENDPOINT;
+  const studentName = firstName(profile, user);
+  const searchText = `${query} ${pageQuery}`.toLowerCase().trim();
 
-  if (!endpoint) {
-    throw new Error("AI backend is not connected yet. The tracker works now; AI doubt solver needs backend setup.");
+  const nav = [
+    { id: "dashboard", label: "Dashboard", icon: Home, group: "LEARN" },
+    { id: "pyq", label: "PYQ Practice", icon: PiIcon, group: "LEARN" },
+    { id: "material", label: "Study Material", icon: BookOpen, group: "LEARN" },
+    { id: "tests", label: "Test Series", icon: CheckCircle2, group: "ASSESS" },
+    { id: "ai", label: "AI Tutor", icon: Bot, group: "AI LEARNING" },
+    { id: "profile", label: "Profile", icon: UserRound, group: "ACCOUNT" },
+  ];
+
+  const visiblePage = active;
+
+  function choosePage(id) {
+    setActive(id);
+    setSidebarOpen(false);
+    setPageQuery("");
   }
 
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ system, userText, imageBase64, imageMime }),
-  });
-
-  const json = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(json?.error || json?.message || `API error ${response.status}`);
-
-  const text = json.answer || json.text || json.content || "";
-  if (!text.trim()) throw new Error("Empty response from AI");
-  return text.trim();
-}
-
-function StatusGlyph({ status, accent }) {
-  if (status === "done") return <span className="glyph glyph-done" style={{ background: accent, borderColor: accent }}><Check size={12} strokeWidth={3} color="#fff" /></span>;
-  if (status === "revise") return <span className="glyph glyph-revise" style={{ borderColor: "#D99A2B" }}><RotateCcw size={11} strokeWidth={2.5} color="#B97A12" /></span>;
-  return <span className="glyph glyph-todo" style={{ borderColor: accent }} />;
-}
-
-function RulerBar({ percent, accent }) {
-  return (
-    <div className="ruler-wrap">
-      <div className="ruler-track">
-        {Array.from({ length: 11 }).map((_, i) => (
-          <span key={i} className={`ruler-tick ${i % 5 === 0 ? "ruler-tick-major" : ""}`} style={{ left: `${i * 10}%` }} />
-        ))}
-        <div className="ruler-fill" style={{ width: `${percent}%`, background: accent }} />
-        <div className="ruler-marker" style={{ left: `${percent}%`, borderColor: accent }} />
-      </div>
-      <span className="ruler-pct" style={{ color: accent }}>{percent}%</span>
-    </div>
-  );
-}
-
-function ChapterRow({ chapter, index, meta, pinned, onCycle, onTogglePin }) {
-  const isHW = meta.highWeight && meta.highWeight.includes(chapter.name);
-  return (
-    <div className="chapter-row">
-      <button className="chapter-row-main" onClick={onCycle}>
-        <span className="chapter-num">{String(index + 1).padStart(2, "0")}</span>
-        <span className={`chapter-name ${chapter.status === "done" ? "chapter-name-done" : ""}`}>{chapter.name}</span>
-        {isHW && <Star size={11} fill="#D99A2B" color="#D99A2B" style={{ flexShrink: 0 }} />}
-      </button>
-      <button className={`pin-btn ${pinned ? "pin-btn-active" : ""}`} onClick={onTogglePin}>
-        <Pin size={13} fill={pinned ? "#2F6FED" : "none"} color={pinned ? "#2F6FED" : "#A7B4C4"} />
-      </button>
-      <button className="status-btn" onClick={onCycle}><StatusGlyph status={chapter.status} accent={meta.accent} /></button>
-    </div>
-  );
-}
-
-function SubjectCard({ subjectKey, meta, chapters, expanded, onToggleExpand, onCycle, focusIds, onTogglePin }) {
-  const pct = subjectProgress(chapters);
-  const doneCount = chapters.filter((c) => c.status === "done" || c.status === "revise").length;
-  return (
-    <div className="subject-card">
-      <button className="subject-head" onClick={() => onToggleExpand(subjectKey)}>
-        <div className="subject-head-left">
-          <span className="subject-tag" style={{ background: meta.accentSoft, color: meta.accent }}>{meta.short}</span>
-          <div className="subject-titles">
-            <span className="subject-name-row">
-              <span className="subject-name">{meta.label}</span>
-              {pct === 100 && <span className="mastered-badge">Mastered</span>}
-            </span>
-            <span className="subject-sub">{doneCount} / {chapters.length} chapters logged</span>
-          </div>
-        </div>
-        <ChevronDown size={18} color="#7C8AA0" style={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform .2s ease" }} />
-      </button>
-      <div className="subject-bar-row"><RulerBar percent={pct} accent={meta.accent} /></div>
-      {expanded && (
-        <div className="chapter-list">
-          {chapters.map((c, i) => (
-            <ChapterRow key={c.id} chapter={c} index={i} meta={meta} pinned={focusIds.includes(c.id)}
-              onCycle={() => onCycle(subjectKey, c.id)}
-              onTogglePin={(e) => { e.stopPropagation(); onTogglePin(c.id); }} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Doubt section ───────────────────────────────────────────────
-function DoubtSection({ doubts, setDoubts }) {
-  const [text, setText] = useState("");
-  const [imageBase64, setImageBase64] = useState(null);
-  const [imageMime, setImageMime] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [isListening, setIsListening] = useState(false);
-  const [micSupported, setMicSupported] = useState(false);
-  const fileRef = useRef(null);
-  const recogRef = useRef(null);
-
-  useEffect(() => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SR) setMicSupported(true);
-  }, []);
-
-  const isAsking = doubts.some((d) => d.status === "loading");
-
-  const handleImage = (file) => {
-    if (!file || !file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target.result;
-      const base64 = dataUrl.split(",")[1];
-      setImageBase64(base64);
-      setImageMime(file.type);
-      setImagePreview(dataUrl);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const clearImage = () => { setImageBase64(null); setImageMime(null); setImagePreview(null); };
-
-  const toggleMic = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
-    if (isListening) {
-      recogRef.current && recogRef.current.stop();
-      setIsListening(false);
-      return;
-    }
-    const r = new SR();
-    r.lang = "hi-IN";
-    r.continuous = false;
-    r.interimResults = false;
-    r.onresult = (e) => {
-      const transcript = e.results[0][0].transcript;
-      setText((prev) => (prev ? prev + " " + transcript : transcript));
-    };
-    r.onerror = () => setIsListening(false);
-    r.onend = () => setIsListening(false);
-    recogRef.current = r;
-    r.start();
-    setIsListening(true);
-  };
-
-  const ask = async () => {
-    const question = text.trim();
-    if (!question && !imageBase64) return;
-    const id = `${Date.now()}`;
-    const displayQ = question || "(Image question)";
-    setDoubts((prev) => [{ id, question: displayQ, answer: "", status: "loading", imagePreview }, ...prev]);
-    setText("");
-    clearImage();
-    try {
-      const answer = await callClaude(DOUBT_SYSTEM_PROMPT, question, imageBase64, imageMime);
-      setDoubts((prev) => prev.map((d) => d.id === id ? { ...d, answer, status: "done" } : d));
-    } catch (e) {
-      setDoubts((prev) => prev.map((d) => d.id === id ? { ...d, answer: e.message || "Error", status: "error" } : d));
-    }
-  };
+  function handleGlobalSearch(text) {
+    setQuery(text);
+    const t = text.toLowerCase();
+    if (!t) return;
+    if (pyqSets.some((x) => `${x.title} ${x.subject}`.toLowerCase().includes(t))) setActive("pyq");
+    else if (studyMaterials.some((x) => `${x.title} ${x.text}`.toLowerCase().includes(t))) setActive("material");
+    else if (tests.some((x) => `${x.title} ${x.text}`.toLowerCase().includes(t))) setActive("tests");
+    else if (["ai", "doubt", "tutor", "planner"].some((w) => t.includes(w))) setActive("ai");
+  }
 
   return (
-    <section className="doubt-section">
-      <span className="section-label"><Sparkles size={11} /> Ask Blueprint AI</span>
-
-      {imagePreview && (
-        <div className="image-preview-wrap">
-          <img src={imagePreview} alt="uploaded" className="image-preview" />
-          <button className="remove-img-btn" onClick={clearImage}><X size={13} /></button>
+    <div className={`app-shell ${theme === "dark" ? "dark" : "light"}`}>
+      <style>{styles}</style>
+      <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+        <div className="logo-wrap">
+          <img src="/logo.svg" alt="JEE Blueprint" className="logo-img" />
         </div>
-      )}
-
-      <div className="doubt-input-row">
-        <input
-          type="text"
-          className="doubt-input"
-          placeholder={imagePreview ? "Add text (optional) and send…" : "Type doubt in English or Hindi…"}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") ask(); }}
-        />
-        <button className="tool-btn" onClick={() => fileRef.current && fileRef.current.click()} title="Upload image">
-          <ImagePlus size={16} color="#5B6B82" />
-        </button>
-        {micSupported && (
-          <button className={`tool-btn ${isListening ? "tool-btn-active" : ""}`} onClick={toggleMic} title="Voice input">
-            {isListening ? <MicOff size={16} color="#D9483A" /> : <Mic size={16} color="#5B6B82" />}
-          </button>
-        )}
-        <button className="doubt-send" onClick={ask} disabled={(!text.trim() && !imageBase64) || isAsking}>
-          <Send size={15} />
-        </button>
-        <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleImage(e.target.files[0])} />
-      </div>
-
-      {isListening && (
-        <div className="mic-indicator">
-          <span className="mic-dot" /><span className="mic-dot" /><span className="mic-dot" />
-          <span style={{ fontSize: 11, color: "#D9483A", fontFamily: "IBM Plex Mono, monospace" }}>Listening… speak your doubt</span>
+        <nav className="side-nav">
+          {renderNavGroup("LEARN", nav, active, choosePage)}
+          {renderNavGroup("ASSESS", nav, active, choosePage)}
+          {renderNavGroup("AI LEARNING", nav, active, choosePage)}
+          {renderNavGroup("ACCOUNT", nav, active, choosePage)}
+        </nav>
+        <div className="ai-help-card">
+          <div className="ai-help-icon"><Bot size={34} /></div>
+          <strong>Chat. Learn. Improve.</strong>
+          <p>AI Tutor will help with doubts, planning and weak-topic revision.</p>
+          <button onClick={() => choosePage("ai")}>Open AI Tutor</button>
         </div>
-      )}
+      </aside>
 
-      {doubts.length > 0 && (
-        <div className="note-stack">
-          {doubts.map((d, i) => (
-            <div key={d.id} className="sticky-note" style={{ transform: `rotate(${(i % 2 === 0 ? -1 : 1) * 1.1}deg)` }}>
-              <span className="note-tape" />
-              <div className="note-head">
-                <p className="note-question">{d.question}</p>
-                <button className="note-del" onClick={() => setDoubts((prev) => prev.filter((x) => x.id !== d.id))}>
-                  <Trash2 size={12} color="#B0392E" />
-                </button>
+      <div className="main-area">
+        <header className="topbar">
+          <button className="mobile-menu" onClick={() => setSidebarOpen(true)}><Menu size={20} /></button>
+          <div className="welcome">Welcome back, {studentName} <span>👋</span></div>
+
+          <div className="class-select">
+            <button onClick={() => setClassOpen((v) => !v)}>{className}<ChevronDown size={16} /></button>
+            {classOpen && (
+              <div className="class-menu">
+                {classOptions.map((opt) => (
+                  <button key={opt} onClick={() => { setClassName(opt); setClassOpen(false); }}>
+                    <span>{opt}</span>{className === opt && <CheckCircle2 size={16} />}
+                  </button>
+                ))}
               </div>
-              {d.imagePreview && <img src={d.imagePreview} alt="q" className="note-img" />}
-              {d.status === "loading" && (
-                <div className="note-loading"><span className="dot" /><span className="dot" /><span className="dot" /></div>
-              )}
-              {d.status === "error" && <p className="note-error">⚠ {d.answer || "Couldn't reach the tutor"}</p>}
-              {d.status === "done" && <p className="note-answer">{d.answer}</p>}
-            </div>
-          ))}
+            )}
+          </div>
+
+          <div className="global-search">
+            <Search size={18} />
+            <input value={query} onChange={(e) => handleGlobalSearch(e.target.value)} placeholder="Search chapters, PYQs, notes, and doubts..." />
+            <kbd>Ctrl</kbd><kbd>K</kbd>
+          </div>
+
+          <div className="theme-toggle">
+            <button className={theme === "light" ? "active" : ""} onClick={() => setTheme("light")}><Sun size={16} /> Light</button>
+            <button className={theme === "dark" ? "active" : ""} onClick={() => setTheme("dark")}><Moon size={16} /> Dark</button>
+          </div>
+          <button className="plan-btn"><Crown size={16} /> Free Plan</button>
+        </header>
+
+        <main className="content">
+          <PageHead active={visiblePage} pageQuery={pageQuery} setPageQuery={setPageQuery} />
+          {visiblePage === "dashboard" && <DashboardPage profile={profile} searchText={searchText} choosePage={choosePage} />}
+          {visiblePage === "pyq" && <PYQPage searchText={searchText} />}
+          {visiblePage === "material" && <MaterialPage searchText={searchText} />}
+          {visiblePage === "tests" && <TestsPage searchText={searchText} />}
+          {visiblePage === "ai" && <AITutorPage />}
+          {visiblePage === "profile" && <ProfilePage profile={profile} setProfile={setProfile} setEditOpen={setEditOpen} signOut={signOut} />}
+        </main>
+      </div>
+
+      {sidebarOpen && <button className="overlay" onClick={() => setSidebarOpen(false)} aria-label="Close menu" />}
+      {editOpen && <ProfileEditModal profile={profile} setProfile={setProfile} onClose={() => setEditOpen(false)} />}
+    </div>
+  );
+}
+
+function PiIcon({ size = 20 }) {
+  return <span style={{ fontSize: Math.max(16, size - 2), fontWeight: 900, lineHeight: 1 }}>π</span>;
+}
+
+function renderNavGroup(group, nav, active, choosePage) {
+  const items = nav.filter((n) => n.group === group);
+  return (
+    <div className="nav-group" key={group}>
+      <p>{group}</p>
+      {items.map((item) => {
+        const Icon = item.icon;
+        return (
+          <button key={item.id} className={active === item.id ? "nav-active" : ""} onClick={() => choosePage(item.id)}>
+            <Icon size={20} /> <span>{item.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function PageHead({ active, pageQuery, setPageQuery }) {
+  const titles = {
+    dashboard: ["Dashboard", "Stay focused, keep learning, and achieve your JEE goals."],
+    pyq: ["PYQ Practice", "Chapter-wise JEE Main + Advanced PYQ sets with difficulty filters."],
+    material: ["Study Material", "Formula sheets, revision checklists and chapter resources."],
+    tests: ["Test Series", "Mock tests and chapter tests to track performance."],
+    ai: ["AI Tutor", "Ask doubts, get study plans and revise weak areas."],
+    profile: ["Profile", "View and manage your personal, academic and study preferences."],
+  };
+  const [title, subtitle] = titles[active] || titles.dashboard;
+  return (
+    <section className="page-head">
+      <div>
+        <h1>{title}</h1>
+        <p>{subtitle}</p>
+      </div>
+      {active !== "profile" && (
+        <div className="page-search">
+          <Search size={17} />
+          <input value={pageQuery} onChange={(e) => setPageQuery(e.target.value)} placeholder="Search chapters & doubts..." />
         </div>
       )}
     </section>
   );
 }
 
-// ─── Main App ────────────────────────────────────────────────────
-function JeeBlueprintDashboard() {
-  const [data, setData] = useState(null);
-  const [loaded, setLoaded] = useState(false);
-  const [expanded, setExpanded] = useState("physics");
-  const [showDatePrompt, setShowDatePrompt] = useState(false);
-  const [showReset, setShowReset] = useState(false);
-  const [doubts, setDoubts] = useState([]);
-  const [ringMounted, setRingMounted] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await appStorage.get(STORAGE_KEY, false);
-        let next = buildDefaultData();
-        if (res && res.value) {
-          const parsed = JSON.parse(res.value);
-          next = { ...buildDefaultData(), ...parsed, subjects: parsed.subjects || buildDefaultData().subjects };
-        }
-        if (next.todayFocus.date !== todayStr()) next.todayFocus = { date: todayStr(), ids: [] };
-        setData(next);
-      } catch (e) {
-        setData(buildDefaultData());
-      } finally {
-        setLoaded(true);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (!loaded) return;
-    setTimeout(() => setRingMounted(true), 100);
-  }, [loaded]);
-
-  useEffect(() => {
-    if (!loaded || !data) return;
-    const today = todayStr();
-    if (data.aiNudge?.date === today && data.aiNudge?.text) return;
-    (async () => {
-      let nudgeText = "";
-      try { nudgeText = await callClaude(NUDGE_SYSTEM_PROMPT, buildStatsContext(data)); } catch (e) { /* silent */ }
-      if (!nudgeText) nudgeText = FALLBACK_NUDGES[Math.floor(Math.random() * FALLBACK_NUDGES.length)];
-      const next = { ...data, aiNudge: { date: today, text: nudgeText } };
-      setData(next);
-      try { await appStorage.set(STORAGE_KEY, JSON.stringify(next), false); } catch (e) { /* silent */ }
-    })();
-  }, [loaded]); // eslint-disable-line
-
-  const persist = async (next) => {
-    setData(next);
-    try { await appStorage.set(STORAGE_KEY, JSON.stringify(next), false); } catch (e) { /* silent */ }
-  };
-
-  if (!loaded || !data) return (
-    <div className="jee-app jee-loading"><style>{CSS}</style>
-      <div className="loading-mark"><span className="loading-dot" />Opening your blueprint…</div>
-    </div>
-  );
-
-  const order = ["todo", "done", "revise"];
-  const cycleStatus = (subjectKey, chapterId) => {
-    const next = JSON.parse(JSON.stringify(data));
-    const ch = next.subjects[subjectKey].find((c) => c.id === chapterId);
-    ch.status = order[(order.indexOf(ch.status) + 1) % order.length];
-    persist(next);
-  };
-
-  const togglePin = (chapterId) => {
-    const next = JSON.parse(JSON.stringify(data));
-    const ids = next.todayFocus.ids;
-    next.todayFocus = { date: todayStr(), ids: ids.includes(chapterId) ? ids.filter(id => id !== chapterId) : [...ids, chapterId] };
-    persist(next);
-  };
-
-  const addMinutes = (mins) => {
-    const today = todayStr();
-    const next = JSON.parse(JSON.stringify(data));
-    next.studyLog[today] = (next.studyLog[today] || 0) + mins;
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    if (next.streak.lastDate !== today) {
-      next.streak.count = next.streak.lastDate === yesterday ? next.streak.count + 1 : 1;
-      next.streak.lastDate = today;
-    }
-    persist(next);
-  };
-
-  const findChapter = (id) => {
-    const subjectKey = id.split("-")[0];
-    const chapter = data.subjects[subjectKey].find((c) => c.id === id);
-    return { subjectKey, meta: SYLLABUS[subjectKey], chapter };
-  };
-
-  const allChapters = Object.values(data.subjects).flat();
-  const overallPct = subjectProgress(allChapters);
-  const todayMinutes = data.studyLog[todayStr()] || 0;
-  const countdown = data.examDate ? daysBetween(todayStr(), data.examDate) : null;
-  const phase = prepPhase(countdown);
-  const week = lastNDays(7).map(date => ({ date, minutes: data.studyLog[date] || 0, isToday: date === todayStr() }));
-  const weekTotalMin = week.reduce((s, d) => s + d.minutes, 0);
-  const focusChapters = data.todayFocus.ids.map(findChapter).filter((x) => x.chapter);
-  const revisionChapters = allChapters.filter((c) => c.status === "revise").map((c) => findChapter(c.id));
-
-  const ringR = 30, ringC = 2 * Math.PI * ringR;
-  const ringOffset = ringC - ((ringMounted ? overallPct : 0) / 100) * ringC;
-  const dotLevel = (mins) => (mins === 0 ? 0 : mins < 30 ? 1 : mins < 60 ? 2 : 3);
+function DashboardPage({ profile, searchText, choosePage }) {
+  const allChapters = Object.entries(syllabus).flatMap(([subject, chapters]) => chapters.map((chapter) => ({ subject, chapter })));
+  const filteredChapters = searchText ? allChapters.filter((x) => `${x.subject} ${x.chapter}`.toLowerCase().includes(searchText)) : allChapters.slice(0, 7);
 
   return (
-    <div className="jee-app">
-      <style>{CSS}</style>
-
-      <header className="hero">
-        <div className="hero-top">
-          <div>
-            <span className="eyebrow">JEE PREP LOG</span>
-            <h1 className="hero-title">Blueprint</h1>
-          </div>
-          <button className="icon-btn" onClick={() => setShowReset(true)}><RefreshCw size={15} /></button>
-        </div>
-
-        <div className="hero-stats">
-          <div className="ring-wrap">
-            <svg viewBox="0 0 72 72" className="ring-svg">
-              <circle cx="36" cy="36" r={ringR} className="ring-track" />
-              <circle cx="36" cy="36" r={ringR} className="ring-fill" strokeDasharray={ringC} strokeDashoffset={ringOffset} />
-            </svg>
-            <div className="ring-label">
-              <span className="ring-pct">{overallPct}%</span>
-              <span className="ring-caption">synced</span>
-            </div>
-          </div>
-          <div className="hero-side">
-            <button className="exam-pill" onClick={() => setShowDatePrompt(true)}>
-              <Calendar size={13} />
-              {countdown !== null ? <span><strong>{countdown}</strong> days to D-day</span> : <span>Set exam date</span>}
-              {phase && <span className="phase-tag" style={{ color: phase.color, borderColor: phase.color }}>{phase.label}</span>}
-            </button>
-            <div className="streak-row">
-              <span className="streak-pill"><Flame size={13} color="#E0703A" />{data.streak.count} day streak</span>
-              <span className="time-pill"><Clock size={12} color="#5B6B82" />{todayMinutes} min today</span>
-            </div>
+    <>
+      <section className="hero-card">
+        <div className="hero-left">
+          <span>Your Learning Overview</span>
+          <h2>Keep building momentum!</h2>
+          <p>Small steps today, big results tomorrow.</p>
+          <div className="metric-row">
+            <Metric icon={CalendarDays} title="JEE Main 2026" sub="1 Feb 2026" />
+            <Metric icon={Target} title="1 day streak" sub="Keep it going!" orange />
+            <Metric icon={Clock3} title="3h 30m today" sub="Study time" />
           </div>
         </div>
-
-        {data.aiNudge?.text && (
-          <div className="nudge-strip">
-            <Sparkles size={13} color="#D99A2B" style={{ flexShrink: 0, marginTop: 2 }} />
-            <span className="nudge-text">{data.aiNudge.text}</span>
+        <div className="progress-side">
+          <div className="donut"><strong>34%</strong><span>Completed</span></div>
+          <div className="progress-bars">
+            <Progress subject="Physics" percent={36} done="18 / 50 Chapters" color="#2563eb" />
+            <Progress subject="Chemistry" percent={22} done="11 / 50 Chapters" color="#22c55e" />
+            <Progress subject="Mathematics" percent={28} done="14 / 50 Chapters" color="#8b5cf6" />
           </div>
-        )}
-
-        <div className="quick-add-row">
-          {[15, 30, 60].map((m) => <button key={m} className="quick-add-chip" onClick={() => addMinutes(m)}>+{m}m</button>)}
+          <Rocket className="hero-rocket" size={88} />
         </div>
-
-        <div className="heatmap-row">
-          {week.map((d) => (
-            <div key={d.date} className="heatmap-cell">
-              <span className={`heatmap-dot heatmap-level-${dotLevel(d.minutes)} ${d.isToday ? "heatmap-dot-today" : ""}`} />
-              <span className="heatmap-day">{new Date(d.date).toLocaleDateString("en-US", { weekday: "narrow" })}</span>
-            </div>
-          ))}
-          <span className="heatmap-total">{Math.round(weekTotalMin / 6) / 10}h this week</span>
-        </div>
-      </header>
-
-      <DoubtSection doubts={doubts} setDoubts={setDoubts} />
-
-      {focusChapters.length > 0 && (
-        <section className="focus-section">
-          <span className="section-label"><Pin size={11} /> Today's focus</span>
-          <div className="focus-list">
-            {focusChapters.map(({ subjectKey, meta, chapter }) => (
-              <button key={chapter.id} className="focus-row" onClick={() => cycleStatus(subjectKey, chapter.id)}>
-                <span className="subject-dot" style={{ background: meta.accent }} />
-                <span className={`chapter-name ${chapter.status === "done" ? "chapter-name-done" : ""}`}>{chapter.name}</span>
-                <StatusGlyph status={chapter.status} accent={meta.accent} />
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {revisionChapters.length > 0 && (
-        <section className="revise-section">
-          <span className="section-label"><RotateCcw size={11} /> Revision queue ({revisionChapters.length})</span>
-          <div className="focus-list">
-            {revisionChapters.map(({ subjectKey, meta, chapter }) => (
-              <button key={chapter.id} className="focus-row" onClick={() => cycleStatus(subjectKey, chapter.id)}>
-                <span className="subject-dot" style={{ background: meta.accent }} />
-                <span className="chapter-name">{chapter.name}</span>
-                <StatusGlyph status={chapter.status} accent={meta.accent} />
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <main className="subject-list">
-        {Object.entries(SYLLABUS).map(([key, meta]) => (
-          <SubjectCard key={key} subjectKey={key} meta={meta} chapters={data.subjects[key]}
-            expanded={expanded === key} onToggleExpand={(k) => setExpanded(expanded === k ? null : k)}
-            onCycle={cycleStatus} focusIds={data.todayFocus.ids} onTogglePin={togglePin} />
-        ))}
-      </main>
-
-      <footer className="legend">
-        <span><span className="legend-dot legend-todo" /> not started</span>
-        <span><span className="legend-dot legend-done" /> done</span>
-        <span><span className="legend-dot legend-revise" /> revise</span>
-        <span><Star size={9} fill="#D99A2B" color="#D99A2B" /> high weightage</span>
-      </footer>
-
-      {showDatePrompt && (
-        <div className="sheet-backdrop" onClick={() => setShowDatePrompt(false)}>
-          <div className="sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet-head"><span>Set your exam date</span><button className="icon-btn" onClick={() => setShowDatePrompt(false)}><X size={16} /></button></div>
-            <input type="date" className="date-input" defaultValue={data.examDate || ""} onChange={(e) => { persist({ ...data, examDate: e.target.value || null }); setShowDatePrompt(false); }} />
-            <p className="sheet-note">Countdown and prep phase update immediately.</p>
-          </div>
-        </div>
-      )}
-
-      {showReset && (
-        <div className="sheet-backdrop" onClick={() => setShowReset(false)}>
-          <div className="sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet-head"><span>Reset all progress?</span><button className="icon-btn" onClick={() => setShowReset(false)}><X size={16} /></button></div>
-            <p className="sheet-note">This clears every chapter, streak, study log, and exam date. Cannot be undone.</p>
-            <div className="sheet-actions">
-              <button className="btn-ghost" onClick={() => setShowReset(false)}>Cancel</button>
-              <button className="btn-danger" onClick={() => { persist(buildDefaultData()); setDoubts([]); setShowReset(false); }}>Reset everything</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&family=Caveat:wght@500;600;700&display=swap');
-
-.jee-app {
-  --ink:#14233B; --ink-soft:#5B6B82; --bg:#EAF1F6; --card:#FFFFFF; --border:#D7E3EC;
-  font-family:'Inter',sans-serif; color:var(--ink); width:100%; max-width:none; margin:0;
-  background: linear-gradient(rgba(47,111,237,0.05) 1px,transparent 1px),
-              linear-gradient(90deg,rgba(47,111,237,0.05) 1px,transparent 1px), var(--bg);
-  background-size:18px 18px,18px 18px,100% 100%;
-  border-radius:22px; padding:22px 18px 16px; box-sizing:border-box;
-}
-.jee-app * { box-sizing:border-box; }
-.jee-app button { transition:transform .12s ease; }
-.jee-app button:active { transform:scale(0.95); }
-
-.jee-loading { display:flex; align-items:center; justify-content:center; min-height:280px; }
-.loading-mark { display:flex; align-items:center; gap:8px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; font-size:13px; }
-.loading-dot { width:8px; height:8px; border-radius:50%; background:#2F6FED; animation:pulse 1.1s ease-in-out infinite; }
-@keyframes pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
-@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-
-.hero,.doubt-section,.focus-section,.revise-section,.subject-list { animation:fadeUp .45s ease both; }
-.doubt-section { animation-delay:.05s; } .focus-section { animation-delay:.08s; } .revise-section { animation-delay:.1s; } .subject-list { animation-delay:.12s; }
-
-.hero-top { display:flex; justify-content:space-between; align-items:flex-start; }
-.eyebrow { font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.14em; color:#2F6FED; font-weight:600; }
-.hero-title { font-family:'Space Grotesk',sans-serif; font-size:30px; font-weight:700; margin:2px 0 0; letter-spacing:-.01em; }
-
-.icon-btn { background:var(--card); border:1px solid var(--border); border-radius:9px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); cursor:pointer; flex-shrink:0; }
-.icon-btn:hover { color:var(--ink); }
-
-.hero-stats { display:flex; align-items:center; gap:14px; margin-top:16px; }
-
-.ring-wrap { position:relative; width:72px; height:72px; flex-shrink:0; }
-.ring-svg { width:72px; height:72px; transform:rotate(-90deg); }
-.ring-track { fill:none; stroke:#D7E3EC; stroke-width:6; }
-.ring-fill { fill:none; stroke:#2F6FED; stroke-width:6; stroke-linecap:round; transition:stroke-dashoffset .9s cubic-bezier(.4,0,.2,1); }
-.ring-label { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-.ring-pct { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; }
-.ring-caption { font-family:'IBM Plex Mono',monospace; font-size:8px; color:var(--ink-soft); letter-spacing:.06em; }
-
-.hero-side { display:flex; flex-direction:column; gap:7px; flex:1; min-width:0; }
-.exam-pill { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-family:'IBM Plex Mono',monospace; font-size:11.5px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:7px 12px; cursor:pointer; color:var(--ink); width:fit-content; }
-.exam-pill strong { font-weight:700; color:#2F6FED; }
-.phase-tag { font-size:9.5px; font-weight:600; border:1px solid; border-radius:999px; padding:2px 7px; }
-.streak-row { display:flex; gap:6px; flex-wrap:wrap; }
-.streak-pill,.time-pill { display:flex; align-items:center; gap:5px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; background:var(--card); border:1px solid var(--border); border-radius:999px; padding:5px 10px; color:var(--ink-soft); }
-
-.nudge-strip { display:flex; align-items:flex-start; gap:7px; margin-top:12px; padding:9px 12px; background:#FFF8E1; border:1px dashed #E0BD63; border-radius:10px; }
-.nudge-text { font-family:'Caveat',cursive; font-size:17px; font-weight:600; color:#7A5B12; line-height:1.25; }
-
-.quick-add-row { display:flex; gap:8px; margin-top:12px; }
-.quick-add-chip { flex:1; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:var(--card); border:1px solid var(--border); border-radius:9px; padding:7px 0; color:#2F6FED; cursor:pointer; }
-.quick-add-chip:hover { background:#E7EEFD; }
-
-.heatmap-row { display:flex; align-items:center; gap:6px; margin-top:12px; padding:10px 12px; background:var(--card); border:1px solid var(--border); border-radius:12px; }
-.heatmap-cell { display:flex; flex-direction:column; align-items:center; gap:3px; }
-.heatmap-dot { width:14px; height:14px; border-radius:4px; background:#E7EDF3; transition:background .3s; }
-.heatmap-level-1{background:#BFE0DA;} .heatmap-level-2{background:#6FBDAE;} .heatmap-level-3{background:#169E8B;}
-.heatmap-dot-today { box-shadow:0 0 0 2px #2F6FED40; }
-.heatmap-day { font-family:'IBM Plex Mono',monospace; font-size:8.5px; color:var(--ink-soft); }
-.heatmap-total { margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; color:var(--ink-soft); }
-
-/* Doubt section */
-.doubt-section { margin-top:18px; }
-.section-label { display:flex; align-items:center; gap:5px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.06em; color:var(--ink-soft); margin:18px 2px 8px; }
-.doubt-section .section-label { margin-top:0; }
-
-.image-preview-wrap { position:relative; margin-bottom:8px; display:inline-block; }
-.image-preview { max-height:120px; max-width:100%; border-radius:10px; border:1px solid var(--border); display:block; }
-.remove-img-btn { position:absolute; top:-6px; right:-6px; background:#fff; border:1px solid var(--border); border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
-
-.doubt-input-row { display:flex; gap:6px; align-items:center; }
-.doubt-input { flex:1; min-width:0; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:13px; color:var(--ink); background:#fff; }
-.doubt-input:focus { outline:2px solid #2F6FED44; border-color:#2F6FED88; }
-.tool-btn { width:36px; height:36px; border-radius:9px; background:var(--card); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
-.tool-btn-active { background:#FFF0EE; border-color:#D9483A55; }
-.doubt-send { width:38px; height:38px; border-radius:10px; background:#2F6FED; border:none; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:background .2s; }
-.doubt-send:disabled { background:#B9C7D8; cursor:default; }
-
-.mic-indicator { display:flex; align-items:center; gap:5px; margin-top:6px; padding:6px 10px; background:#FFF0EE; border-radius:8px; }
-.mic-dot { width:6px; height:6px; border-radius:50%; background:#D9483A; animation:bounce 0.9s infinite ease-in-out; }
-.mic-dot:nth-child(2){animation-delay:.15s;} .mic-dot:nth-child(3){animation-delay:.3s;}
-
-.note-stack { display:flex; flex-direction:column; gap:18px; margin-top:14px; }
-.sticky-note { position:relative; background:#FFF6C9; border-radius:3px; padding:18px 14px 14px; box-shadow:0 4px 12px rgba(20,35,59,0.14); animation:fadeUp .35s ease both; }
-.note-tape { position:absolute; top:-7px; left:50%; transform:translateX(-50%) rotate(-2deg); width:46px; height:14px; background:rgba(255,255,255,0.65); border:1px solid rgba(0,0,0,0.06); }
-.note-head { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:4px; }
-.note-question { font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; color:#5B4A0A; margin:0; flex:1; }
-.note-del { background:none; border:none; cursor:pointer; flex-shrink:0; padding:2px; opacity:.5; }
-.note-del:hover { opacity:1; }
-.note-img { max-width:100%; max-height:140px; object-fit:contain; border-radius:8px; margin-bottom:8px; display:block; }
-.note-answer { font-family:'Caveat',cursive; font-weight:500; font-size:19px; line-height:1.35; color:#3D2F05; margin:0; white-space:pre-wrap; }
-.note-error { font-family:'Inter',sans-serif; font-size:12px; color:#B0392E; margin:0; }
-.note-loading { display:flex; gap:4px; padding:4px 0; }
-.note-loading .dot { width:6px; height:6px; border-radius:50%; background:#C9A227; animation:bounce 1s infinite ease-in-out; }
-.note-loading .dot:nth-child(2){animation-delay:.15s;} .note-loading .dot:nth-child(3){animation-delay:.3s;}
-@keyframes bounce { 0%,80%,100%{transform:translateY(0);opacity:.4} 40%{transform:translateY(-4px);opacity:1} }
-
-.focus-section,.revise-section { margin-top:2px; }
-.focus-list { display:flex; flex-direction:column; gap:6px; }
-.focus-row { display:flex; align-items:center; gap:9px; width:100%; background:var(--card); border:1px solid var(--border); border-radius:11px; padding:9px 11px; cursor:pointer; text-align:left; }
-.subject-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-.focus-row .chapter-name { flex:1; font-size:12.5px; }
-
-.subject-list { display:flex; flex-direction:column; gap:10px; margin-top:18px; }
-.subject-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:13px 14px 14px; }
-.subject-head { width:100%; background:none; border:none; padding:0; display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
-.subject-head-left { display:flex; align-items:center; gap:10px; }
-.subject-tag { font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; letter-spacing:.04em; padding:4px 7px; border-radius:6px; }
-.subject-titles { display:flex; flex-direction:column; align-items:flex-start; }
-.subject-name-row { display:flex; align-items:center; gap:6px; }
-.subject-name { font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15px; }
-.subject-sub { font-size:11px; color:var(--ink-soft); margin-top:1px; }
-.mastered-badge { font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:600; color:#8A6A0D; background:linear-gradient(90deg,#FCEFC0,#F4D67A,#FCEFC0); background-size:200% 100%; padding:2px 7px; border-radius:999px; animation:shimmer 2.4s linear infinite; }
-@keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
-
-.subject-bar-row { margin-top:10px; }
-.ruler-wrap { display:flex; align-items:center; gap:8px; }
-.ruler-track { position:relative; flex:1; height:10px; background:#F1F5F9; border-radius:5px; overflow:visible; }
-.ruler-tick { position:absolute; top:100%; width:1px; height:4px; background:#C3D1DF; }
-.ruler-tick-major { height:6px; background:#9FB2C6; }
-.ruler-fill { height:100%; border-radius:5px; transition:width .5s ease; }
-.ruler-marker { position:absolute; top:-3px; width:3px; height:16px; background:#fff; border:2px solid; border-radius:2px; transform:translateX(-1.5px); transition:left .5s ease; }
-.ruler-pct { font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; width:34px; text-align:right; }
-
-.chapter-list { margin-top:14px; padding-top:12px; border-top:1px dashed var(--border); display:flex; flex-direction:column; gap:1px; animation:fadeUp .3s ease both; }
-.chapter-row { display:flex; align-items:center; gap:4px; border-radius:8px; }
-.chapter-row:hover { background:#F6F9FB; }
-.chapter-row-main { flex:1; min-width:0; display:flex; align-items:center; gap:9px; background:none; border:none; padding:7px 2px; cursor:pointer; text-align:left; }
-.chapter-num { font-family:'IBM Plex Mono',monospace; font-size:10px; color:#A7B4C4; width:16px; flex-shrink:0; }
-.chapter-name { flex:1; font-size:13px; color:var(--ink); }
-.chapter-name-done { color:var(--ink-soft); text-decoration:line-through; text-decoration-color:#C3D1DF; }
-.pin-btn,.status-btn { background:none; border:none; padding:4px; cursor:pointer; flex-shrink:0; display:flex; }
-
-.glyph { width:20px; height:20px; border-radius:50%; border:1.5px solid; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.glyph-todo { background:#fff; }
-.glyph-revise { background:#FDF1DD; }
-.glyph-done { animation:pop .3s cubic-bezier(.34,1.56,.64,1); }
-@keyframes pop{0%{transform:scale(0.6)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
-
-.legend { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:18px; font-size:10px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; }
-.legend span { display:flex; align-items:center; gap:5px; }
-.legend-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
-.legend-todo { border:1.5px solid #9FB2C6; }
-.legend-done { background:#2F6FED; }
-.legend-revise { background:#D99A2B; }
-
-.sheet-backdrop { position:fixed; inset:0; background:rgba(20,35,59,0.45); display:flex; align-items:flex-end; justify-content:center; z-index:50; border-radius:20px; }
-.sheet { background:#fff; width:100%; max-width:420px; border-radius:18px 18px 0 0; padding:18px; animation:fadeUp .25s ease both; }
-.sheet-head { display:flex; justify-content:space-between; align-items:center; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15px; margin-bottom:12px; }
-.date-input { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:9px; font-family:'Inter',sans-serif; font-size:14px; color:var(--ink); }
-.sheet-note { font-size:12px; color:var(--ink-soft); margin-top:10px; line-height:1.5; }
-.sheet-actions { display:flex; gap:8px; margin-top:14px; }
-.btn-ghost,.btn-danger { flex:1; padding:10px; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid var(--border); }
-.btn-ghost { background:#fff; color:var(--ink-soft); }
-.btn-danger { background:#D9483A; color:#fff; border-color:#D9483A; }
-`;
-
-
-const PLATFORM_TABS = [
-  { id: "dashboard", label: "Dashboard", section: "LEARN ONLINE", icon: "⌂" },
-  { id: "pyq", label: "PYQ Practice", section: "STUDY PACKS", icon: "π" },
-  { id: "material", label: "Library", section: "STUDY PACKS", icon: "▤" },
-  { id: "tests", label: "Test Series", section: "STUDY PACKS", icon: "✓" },
-  { id: "ai", label: "AI Tutor", section: "EXPLORE", icon: "✦" },
-  { id: "profile", label: "Profile", section: "ACCOUNT", icon: "☻" },
-];
-
-const COURSE_CARDS = [
-  { title: "Lakshya JEE 2027", label: "Class 12 JEE", color: "#dcfce7", accent: "#16a34a", line1: "JEE Main + Advanced structured prep", line2: "Syllabus tracker, PYQ plan and weekly tests" },
-  { title: "Lakshya JEE 2.0 2027", label: "Class 12 JEE", color: "#dbeafe", accent: "#2563eb", line1: "Focused bridge course for backlogs", line2: "Chapter targets and revision queue" },
-  { title: "Vidyapeeth Self Study", label: "Offline + Online", color: "#111827", accent: "#f97316", line1: "Self-study dashboard for disciplined prep", line2: "Daily minutes, streak and high-weightage chapters", dark: true },
-];
-
-const EXPLORE_CARDS = [
-  { title: "Video Lectures", icon: "▶", color: "#fef3c7" },
-  { title: "Data Analytics", icon: "◔", color: "#dbeafe" },
-  { title: "All PC Courses", icon: "⌘", color: "#ede9fe" },
-  { title: "Coding & Web", icon: "{ }", color: "#fce7f3" },
-];
-
-const MATERIALS = [
-  { title: "Physics Formula Sheet", tag: "Free", detail: "Mechanics, Electrostatics, Optics, Modern Physics quick revision." },
-  { title: "Chemistry Short Notes", tag: "Soon", detail: "Physical formulas, Organic named reactions, Inorganic NCERT points." },
-  { title: "Maths Formula Bank", tag: "Soon", detail: "Calculus, Coordinate Geometry, Algebra, Vectors and 3D." },
-  { title: "High Weightage Checklist", tag: "Free", detail: "Priority chapters for faster revision and daily planning." },
-];
-
-const PYQ_SETS = [
-  { subject: "Physics", chapter: "Current Electricity", count: 25, level: "Medium" },
-  { subject: "Chemistry", chapter: "Chemical Bonding", count: 30, level: "High" },
-  { subject: "Maths", chapter: "Matrices & Determinants", count: 22, level: "Medium" },
-  { subject: "Maths", chapter: "Integration", count: 35, level: "High" },
-];
-
-function PwCard({ children, className = "" }) {
-  return <div className={`pw-card ${className}`}>{children}</div>;
-}
-
-function PageHero({ eyebrow="JEE BLUEPRINT", title, subtitle }) {
-  return (
-    <div className="pw-page-hero">
-      <span>{eyebrow}</span>
-      <h1>{title}</h1>
-      <p>{subtitle}</p>
-    </div>
-  );
-}
-
-function ExploreStrip() {
-  return (
-    <section className="pw-section">
-      <div className="pw-section-title-row"><h2>Explore Blueprint</h2><button>View all</button></div>
-      <div className="pw-explore-row">
-        {EXPLORE_CARDS.map((c) => (
-          <PwCard key={c.title} className="pw-explore-card">
-            <div className="pw-explore-icon" style={{ background: c.color }}>{c.icon}</div>
-            <strong>{c.title}</strong>
-          </PwCard>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function CourseCard({ course }) {
-  return (
-    <PwCard className={`pw-course-card ${course.dark ? "pw-course-dark" : ""}`}>
-      <div className="pw-course-art" style={{ background: course.color }}>
-        <div className="pw-teacher-row">
-          <span /> <span /> <span /> <span /> <span />
-        </div>
-        <b>{course.title}</b>
-      </div>
-      <div className="pw-course-body">
-        <div className="pw-course-label">{course.label}<span>HINGLISH</span></div>
-        <h3>{course.title}</h3>
-        <p>▣ {course.line1}</p>
-        <p>◷ {course.line2}</p>
-      </div>
-    </PwCard>
-  );
-}
-
-function BatchesPage() {
-  return (
-    <main className="pw-content-inner">
-      <div className="pw-content-top"><h1>Batches</h1><div className="pw-search">⌕ <span>Search for JEE batches, PYQ, tests</span></div></div>
-      <ExploreStrip />
-      <section className="pw-section">
-        <div className="pw-section-title-row"><h2>Popular Courses</h2><button>Compare plans</button></div>
-        <div className="pw-course-grid">{COURSE_CARDS.map((c) => <CourseCard key={c.title} course={c} />)}</div>
       </section>
-    </main>
+
+      {searchText && (
+        <section className="search-results">
+          <h3>Search results</h3>
+          <div className="result-list">
+            {filteredChapters.length ? filteredChapters.map((x) => <div key={`${x.subject}-${x.chapter}`}><strong>{x.chapter}</strong><span>{x.subject}</span></div>) : <p>No matching chapter found.</p>}
+          </div>
+        </section>
+      )}
+
+      <section className="dash-grid">
+        <div className="card study-time-card">
+          <h3>Today's Study Time</h3>
+          <div className="big-number"><Clock3 size={28} />3h 30m</div>
+          <p>Total study time</p>
+          <div className="bar-chart">{[22, 32, 18, 44, 26, 52, 64, 76, 50, 88].map((h, i) => <span key={i} style={{ height: `${h}%` }} />)}</div>
+        </div>
+
+        <div className="card tasks-card">
+          <div className="card-title"><h3>Pending Tasks</h3><button>View All</button></div>
+          {[
+            ["Finish Rotational Motion notes", "Physics", "Today"],
+            ["Solve Chemical Bonding PYQs", "Chemistry", "Today"],
+            ["Attempt Mathematics Test", "Mathematics", "Tomorrow"],
+            ["Revise Thermodynamics formulas", "Chemistry", "Tomorrow"],
+          ].map(([task, tag, date]) => <Task key={task} task={task} tag={tag} date={date} />)}
+        </div>
+
+        <div className="card quick-stats">
+          <h3>Quick Stats</h3>
+          <Stat title="Chapters Completed" value="43 / 150" />
+          <Stat title="PYQs Solved" value="264" />
+          <Stat title="Avg. Study Time / Day" value={profile.dailyStudyTime || "3–4 hours"} />
+        </div>
+      </section>
+
+      <section className="bottom-grid">
+        <div className="card activity-card">
+          <h3>Recent Activity</h3>
+          <Activity icon="⚗" text="Solved 25 PYQs - Rotational Motion" tag="Completed" />
+          <Activity icon="▶" text="Watched: Chemical Bonding - L2" tag="In Progress" blue />
+          <Activity icon="π" text="Attempted Test: Motion in a Plane" tag="Completed" />
+        </div>
+        <div className="card quick-actions">
+          <h3>Quick Actions</h3>
+          <div className="action-grid">
+            <Action label="PYQ Practice" text="Practice past years' questions" onClick={() => choosePage("pyq")} />
+            <Action label="Test Series" text="Attempt full & chapter tests" onClick={() => choosePage("tests")} />
+            <Action label="AI Tutor" text="Ask doubts & get instant help" onClick={() => choosePage("ai")} />
+            <Action label="Study Material" text="Access notes & resources" onClick={() => choosePage("material")} />
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
 
-function PyqPage() {
+function Metric({ icon: Icon, title, sub, orange }) {
+  return <div className="metric"><Icon size={22} color={orange ? "#f97316" : "#2563eb"} /><div><strong>{title}</strong><span>{sub}</span></div></div>;
+}
+function Progress({ subject, percent, done, color }) {
+  return <div className="progress-item"><div><strong>{subject}</strong><span>{done}</span></div><div className="progress-line"><i style={{ width: `${percent}%`, background: color }} /></div><b>{percent}%</b></div>;
+}
+function Task({ task, tag, date }) { return <div className="task"><span className="check-box" /><strong>{task}</strong><em>{tag}</em><small>{date}</small></div>; }
+function Stat({ title, value }) { return <div className="stat-row"><span>{title}</span><strong>{value}</strong></div>; }
+function Activity({ icon, text, tag, blue }) { return <div className="activity"><b>{icon}</b><span>{text}</span><em className={blue ? "blue" : "green"}>{tag}</em></div>; }
+function Action({ label, text, onClick }) { return <button className="action-card" onClick={onClick}><strong>{label}</strong><span>{text}</span></button>; }
+
+function PYQPage({ searchText }) {
+  const list = useMemo(() => filterCards(pyqSets, searchText), [searchText]);
+  return <CardGrid items={list.map((x) => ({ title: x.title, text: `${x.questions} questions planned · Difficulty: ${x.difficulty}`, tag: x.subject, button: "Open set" }))} empty="No matching PYQ set found." />;
+}
+function MaterialPage({ searchText }) {
+  const list = useMemo(() => filterCards(studyMaterials, searchText), [searchText]);
+  return <CardGrid items={list.map((x) => ({ ...x, button: "Open" }))} empty="No matching study material found." />;
+}
+function TestsPage({ searchText }) {
+  const list = useMemo(() => filterCards(tests, searchText), [searchText]);
+  return <CardGrid items={list.map((x) => ({ ...x, button: "Start" }))} empty="No matching test found." />;
+}
+function filterCards(items, searchText) {
+  if (!searchText) return items;
+  return items.filter((x) => Object.values(x).join(" ").toLowerCase().includes(searchText));
+}
+function CardGrid({ items, empty }) {
+  if (!items.length) return <div className="empty-card">{empty}</div>;
+  return <section className="cards-grid">{items.map((item) => <div className="item-card" key={item.title}><span>{item.tag}</span><h3>{item.title}</h3><p>{item.text}</p><button>{item.button}</button></div>)}</section>;
+}
+
+function AITutorPage() {
+  const [q, setQ] = useState("");
   return (
-    <main className="pw-content-inner">
-      <PageHero title="PYQ Practice" subtitle="Chapter-wise JEE Main + Advanced PYQ section. Start with free sets, then make detailed solutions Pro." />
-      <div className="pw-grid-four">
-        {PYQ_SETS.map((p) => (
-          <PwCard key={p.subject + p.chapter} className="pw-action-card">
-            <span className="pw-pill">{p.subject}</span>
-            <h3>{p.chapter}</h3>
-            <p>{p.count} questions planned</p>
-            <p>Difficulty: {p.level}</p>
-            <button>Open set</button>
-          </PwCard>
-        ))}
+    <section className="ai-page card">
+      <div className="ai-bot-large"><Bot size={46} /></div>
+      <div>
+        <h2>AI Tutor Coming Soon</h2>
+        <p>AI logo changed to a neutral tutor bot. API key frontend मध्ये ठेवायची नाही. Backend जोडल्यावर doubts, planner and weak-topic help चालू करता येईल.</p>
+        <div className="ai-input-row"><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Type a sample doubt..." /><button disabled>Ask soon</button></div>
       </div>
-    </main>
+    </section>
   );
 }
 
-function MaterialPage() {
+function ProfilePage({ profile, setEditOpen, signOut }) {
   return (
-    <main className="pw-content-inner">
-      <PageHero title="Library" subtitle="Formula sheets, revision checklists, chapter resources and your own notes in one place." />
-      <div className="pw-grid-four">
-        {MATERIALS.map((m) => (
-          <PwCard key={m.title} className="pw-action-card">
-            <span className="pw-pill">{m.tag}</span>
-            <h3>{m.title}</h3>
-            <p>{m.detail}</p>
-            <button>Open</button>
-          </PwCard>
-        ))}
-      </div>
-      <div className="pw-warning">Copyrighted coaching PDFs/books upload करू नकोस. स्वतःचे notes किंवा official/public papers वापर.</div>
-    </main>
+    <>
+      <section className="profile-hero card">
+        <div className="avatar-wrap"><div className="avatar">{profile.name?.[0] || "S"}</div><button><Edit3 size={18} /></button></div>
+        <div className="profile-main-info">
+          <h2>{profile.name}</h2>
+          <p><Mail size={18} /> {profile.email}</p>
+          <p><Phone size={18} /> {profile.mobile}</p>
+          <span className="plan-chip"><Crown size={16} /> Free Plan</span>
+        </div>
+        <div className="profile-rocket"><Rocket size={88} /><div><strong>Keep building your future</strong><p>Complete your profile to get personalized recommendations and a better learning experience.</p></div></div>
+      </section>
+
+      <section className="profile-grid">
+        <ProfileInfoCard title="Personal Details" onEdit={() => setEditOpen(true)} rows={[
+          ["Full Name", profile.name], ["Mobile No", profile.mobile], ["Email", profile.email], ["City / Village / Town", profile.city], ["About (Bio)", profile.bio],
+        ]} />
+        <ProfileInfoCard title="Academic Details" onEdit={() => setEditOpen(true)} rows={[
+          ["Class", profile.className], ["Target Exam", profile.targetExam], ["Board / State Board", profile.board], ["Preferred Language", profile.language], ["Study Goal", profile.goal],
+        ]} />
+        <div className="card account-actions">
+          <h3>Account Actions</h3>
+          <button onClick={() => setEditOpen(true)}><Edit3 size={18} /> Edit Profile</button>
+          <button className="primary"><Save size={18} /> Save Changes</button>
+          <button className="danger" onClick={signOut}><LogOut size={18} /> Sign out</button>
+          <div className="safe-box"><ShieldCheck size={22} /><strong>Your data is safe with us</strong><p>We never share your personal information with anyone.</p></div>
+        </div>
+        <ProfileInfoCard wide title="Study Preferences" onEdit={() => setEditOpen(true)} rows={[
+          ["Preferred Subjects", profile.subjects], ["Preferred Content Type", profile.contentType], ["Daily Study Time", profile.dailyStudyTime], ["Weak Areas (Optional)", profile.weakAreas],
+        ]} />
+      </section>
+    </>
   );
 }
-
-function TestsPage() {
-  return (
-    <main className="pw-content-inner">
-      <PageHero title="Test Series" subtitle="Chapter tests and mock tests. First version can store marks manually, next version can auto-score." />
-      <div className="pw-grid-three">
-        <PwCard className="pw-action-card"><span className="pw-pill">Free</span><h3>Chapter Test</h3><p>10-question quick tests for one chapter.</p><button>Start</button></PwCard>
-        <PwCard className="pw-action-card"><span className="pw-pill">Pro idea</span><h3>Full Mock</h3><p>JEE Main style timed mock test with performance analysis.</p><button>Preview</button></PwCard>
-        <PwCard className="pw-action-card"><span className="pw-pill">AI idea</span><h3>Weak Topic Test</h3><p>Generate tests from chapters marked as revise.</p><button>Coming soon</button></PwCard>
-      </div>
-    </main>
-  );
+function ProfileInfoCard({ title, rows, onEdit, wide }) {
+  return <div className={`card profile-info ${wide ? "wide" : ""}`}><div className="card-title"><h3>{title}</h3><button onClick={onEdit}><Edit3 size={16} /> Edit</button></div>{rows.map(([k, v]) => <div className="profile-row" key={k}><span>{k}</span><strong>{v || "—"}</strong></div>)}</div>;
 }
 
-function AiPage() {
+function ProfileEditModal({ profile, setProfile, onClose }) {
+  const [draft, setDraft] = useState(profile);
+  const fields = [
+    ["name", "Full Name"], ["mobile", "Mobile No"], ["email", "Email"], ["city", "City / Village / Town"],
+    ["className", "Class"], ["board", "Board / State Board"], ["targetExam", "Target Exam"], ["language", "Preferred Language"],
+    ["goal", "Study Goal"], ["dailyStudyTime", "Daily Study Time"], ["weakAreas", "Weak Areas"], ["bio", "About"],
+  ];
   return (
-    <main className="pw-content-inner">
-      <PageHero title="AI Tutor" subtitle="AI doubt solver will connect through secure AWS backend. API key frontend मध्ये ठेवायची नाही." />
-      <PwCard className="pw-ai-card">
-        <div><span className="pw-pill">Secure backend needed</span><h3>AI Coming Soon</h3><p>Next step: AWS Function/Lambda + Claude/Bedrock backend. Free users: 5 doubts/day. Pro users: higher limit.</p></div>
-        <button>Setup later</button>
-      </PwCard>
-    </main>
-  );
-}
-
-function ProfilePage() {
-  return (
-    <main className="pw-content-inner">
-      <PageHero title="Profile" subtitle="Student profile, target exam and plan details." />
-      <div className="pw-grid-three">
-        <PwCard className="pw-action-card"><span className="pw-pill">Free</span><h3>Student Plan</h3><p>Current plan: Free. Pro can unlock full PYQ, solutions and AI planner.</p></PwCard>
-        <PwCard className="pw-action-card"><span className="pw-pill">JEE</span><h3>Target</h3><p>Target exam date is currently set inside Dashboard.</p></PwCard>
-        <PwCard className="pw-action-card"><span className="pw-pill">Next step</span><h3>Progress Sync</h3><p>Right now progress is browser localStorage. Later save per-user data in cloud database.</p></PwCard>
-      </div>
-    </main>
-  );
-}
-
-function PwSidebar({ activeTab, setActiveTab }) {
-  const sections = ["LEARN ONLINE", "STUDY PACKS", "EXPLORE", "ACCOUNT"];
-  return (
-    <aside className="pw-sidebar">
-      <div className="pw-brand"><img src="/logo.png" alt="JEE Blueprint" className="pw-brand-img" /></div>
-      {sections.map(section => (
-        <div key={section} className="pw-menu-section">
-          <span className="pw-menu-label">{section}</span>
-          {PLATFORM_TABS.filter(t => t.section === section).map(tab => (
-            <button key={tab.id} className={`pw-menu-item ${activeTab === tab.id ? "active" : ""}`} onClick={() => setActiveTab(tab.id)}>
-              <span>{tab.icon}</span>{tab.label}
-            </button>
+    <div className="modal-backdrop">
+      <div className="modal-card">
+        <div className="modal-head"><h2>Edit Profile</h2><button onClick={onClose}><X size={20} /></button></div>
+        <div className="form-grid">
+          {fields.map(([key, label]) => key === "className" ? (
+            <label key={key}>{label}<select value={draft[key]} onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}>{classOptions.map((x) => <option key={x}>{x}</option>)}</select></label>
+          ) : (
+            <label key={key}>{label}<input value={draft[key] || ""} onChange={(e) => setDraft({ ...draft, [key]: e.target.value })} /></label>
           ))}
         </div>
-      ))}
-    </aside>
-  );
-}
-
-function PwTopbar({ activeLabel }) {
-  return (
-    <header className="pw-topbar">
-      <div><span>12th • IIT JEE</span><strong>{activeLabel}</strong></div>
-      <div className="pw-top-search">⌕ Search for chapters, PYQ, notes</div>
-      <button className="pw-plan-btn">Free Plan</button>
-    </header>
-  );
-}
-
-const PW_STYLE = `
-.pw-platform{min-height:100vh;background:#f7f8fb;color:#101827;font-family:Inter,system-ui,sans-serif;display:grid;grid-template-columns:270px 1fr;}
-.pw-sidebar{background:#fff;border-right:1px solid #e5e7eb;min-height:100vh;position:sticky;top:0;align-self:start;padding:18px 0;}
-.pw-brand{height:64px;display:flex;align-items:center;gap:12px;padding:0 20px 16px;border-bottom:1px solid #eef2f7;}
-.pw-brand-img{height:48px;width:auto;max-width:210px;object-fit:contain;display:block;}
-.pw-logo{width:34px;height:34px;border-radius:50%;border:2px solid #111827;display:grid;place-items:center;font-weight:900;background:#f8fafc;}
-.pw-menu-section{padding:22px 12px 0;}
-.pw-menu-label{display:block;padding:0 20px 10px;color:#8b95a7;font-size:12px;font-weight:800;letter-spacing:.06em;}
-.pw-menu-item{width:100%;height:48px;border:0;background:transparent;border-radius:0;display:flex;align-items:center;gap:14px;padding:0 18px;color:#111827;font-weight:800;font-size:15px;cursor:pointer;border-left:4px solid transparent;}
-.pw-menu-item span{width:22px;text-align:center;color:#4b5563;}
-.pw-menu-item.active{background:#ebe8ff;color:#4f46e5;border-left-color:#635bff;}
-.pw-main{min-width:0;}
-.pw-topbar{height:64px;background:#111820;color:white;display:flex;align-items:center;gap:18px;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:30;}
-.pw-topbar div:first-child{display:flex;align-items:center;gap:12px;min-width:220px;}
-.pw-topbar div:first-child span{font-size:13px;color:#cbd5e1;border:1px solid rgba(255,255,255,.16);padding:8px 12px;border-radius:10px;}
-.pw-topbar div:first-child strong{font-size:16px;white-space:nowrap;}
-.pw-top-search{height:42px;background:#fff;color:#9ca3af;border:1px solid #d1d5db;border-radius:8px;display:flex;align-items:center;max-width:420px;flex:1;padding:0 16px;font-size:15px;}
-.pw-plan-btn{border:0;background:#f97316;color:#fff;border-radius:12px;font-weight:900;padding:11px 15px;}
-.pw-content-inner{max-width:1220px;margin:0 auto;padding:34px 34px 60px;}
-.pw-content-top{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:28px;}
-.pw-content-top h1{font-size:26px;margin:0;}
-.pw-search{height:52px;min-width:320px;border:1px solid #d7dde8;border-radius:7px;background:#fff;display:flex;align-items:center;gap:12px;color:#8b95a7;padding:0 16px;font-size:16px;}
-.pw-section{margin-bottom:42px;}
-.pw-section-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
-.pw-section-title-row h2{font-size:32px;margin:0;letter-spacing:.01em;}
-.pw-section-title-row button{border:0;background:#eef2ff;color:#4f46e5;border-radius:999px;padding:9px 13px;font-weight:900;}
-.pw-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 8px 20px rgba(15,23,42,.04);}
-.pw-explore-row{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:18px;overflow:hidden;}
-.pw-explore-card{height:108px;display:flex;align-items:center;gap:20px;padding:0 18px;font-size:21px;white-space:nowrap;overflow:hidden;}
-.pw-explore-icon{width:70px;height:70px;border-radius:14px;display:grid;place-items:center;font-weight:900;color:#111827;font-size:22px;flex:0 0 auto;}
-.pw-course-grid{display:grid;grid-template-columns:repeat(3,minmax(260px,1fr));gap:22px;}
-.pw-course-card{overflow:hidden;border-radius:16px;}
-.pw-course-art{height:224px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;position:relative;}
-.pw-course-art b{font-size:31px;letter-spacing:.04em;text-transform:uppercase;color:#14532d;}
-.pw-course-dark .pw-course-art b{color:white;}
-.pw-teacher-row{display:flex;align-items:flex-end;gap:7px;align-self:center;margin-top:auto;}
-.pw-teacher-row span{width:44px;height:68px;border-radius:28px 28px 10px 10px;background:linear-gradient(#1f2937,#111827);display:block;box-shadow:0 -10px 0 #fde68a inset;}
-.pw-course-body{padding:18px;}
-.pw-course-label{display:flex;align-items:center;justify-content:space-between;color:#f97316;font-weight:900;margin-bottom:10px;}
-.pw-course-label span{font-size:12px;color:#111827;border:1px solid #d1d5db;border-radius:5px;padding:5px 9px;background:white;}
-.pw-course-body h3{font-size:22px;margin:0 0 12px;}
-.pw-course-body p{margin:8px 0;color:#4b5563;font-size:15px;}
-.pw-course-dark{background:#111820;color:white;border-color:#111820;}
-.pw-course-dark .pw-course-body p{color:#d1d5db;}
-.pw-page-hero{background:linear-gradient(135deg,#edf4ff,#f8fbff);border:1px solid #dbe3ef;border-radius:22px;padding:26px;margin-bottom:22px;}
-.pw-page-hero span{font-size:12px;letter-spacing:.22em;color:#2563eb;font-weight:900;}
-.pw-page-hero h1{font-size:36px;margin:10px 0 10px;}
-.pw-page-hero p{font-size:18px;color:#607086;margin:0;line-height:1.6;}
-.pw-grid-four{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:16px;}
-.pw-grid-three{display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:16px;}
-.pw-action-card{padding:20px;position:relative;min-height:190px;}
-.pw-action-card h3{font-size:21px;margin:10px 0;color:#111827;}
-.pw-action-card p{color:#4b5563;line-height:1.55;margin:8px 0;}
-.pw-action-card button,.pw-ai-card button{width:100%;border:0;border-radius:10px;background:#2563eb;color:white;padding:13px 14px;font-weight:900;margin-top:12px;cursor:pointer;}
-.pw-pill{display:inline-flex;background:#eef2ff;color:#2563eb;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:900;}
-.pw-warning{margin-top:18px;background:#fff8e1;border:1px dashed #e0bd63;border-radius:14px;padding:16px;color:#7a5b12;}
-.pw-ai-card{padding:24px;display:flex;align-items:center;justify-content:space-between;gap:18px;}
-.pw-ai-card h3{font-size:24px;margin:12px 0 8px;}
-.pw-ai-card p{color:#4b5563;margin:0;}
-.pw-ai-card button{width:auto;margin:0;min-width:150px;}
-.pw-dashboard-wrap{max-width:920px;margin:0 auto;}
-.pw-dashboard-wrap .jee-app{box-shadow:0 10px 30px rgba(15,23,42,.06);border:1px solid #dbe3ef;}
-@media(max-width:1100px){.pw-platform{grid-template-columns:1fr}.pw-sidebar{position:relative;min-height:auto;display:flex;overflow-x:auto;padding:10px;border-right:0;border-bottom:1px solid #e5e7eb}.pw-brand{display:none}.pw-menu-section{display:flex;align-items:center;gap:8px;padding:0}.pw-menu-label{display:none}.pw-menu-item{height:40px;border-left:0;border-radius:999px;white-space:nowrap;padding:0 14px}.pw-topbar{top:0}.pw-explore-row,.pw-course-grid,.pw-grid-four{grid-template-columns:repeat(2,minmax(220px,1fr))}}
-@media(max-width:720px){.pw-topbar{height:auto;align-items:stretch;flex-direction:column;padding:14px}.pw-topbar div:first-child{min-width:0}.pw-top-search{max-width:none;min-width:0;width:100%;box-sizing:border-box}.pw-content-inner{padding:22px 14px 40px}.pw-content-top{align-items:flex-start;flex-direction:column}.pw-search{min-width:0;width:100%;box-sizing:border-box}.pw-explore-row,.pw-course-grid,.pw-grid-four,.pw-grid-three{grid-template-columns:1fr}.pw-section-title-row h2{font-size:25px}.pw-course-art{height:180px}.pw-page-hero h1{font-size:28px}.pw-ai-card{display:block}.pw-ai-card button{width:100%;margin-top:16px}}
-`;
-
-export default function JeeBlueprint() {
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const activeLabel = PLATFORM_TABS.find((t) => t.id === activeTab)?.label || "Dashboard";
-  const renderTab = () => {
-    if (activeTab === "dashboard") return <main className="pw-content-inner"><div className="pw-content-top"><h1>Dashboard</h1><div className="pw-search">⌕ Search chapters and doubts</div></div><div className="pw-dashboard-wrap"><JeeBlueprintDashboard /></div></main>;
-    if (activeTab === "pyq") return <PyqPage />;
-    if (activeTab === "material") return <MaterialPage />;
-    if (activeTab === "tests") return <TestsPage />;
-    if (activeTab === "ai") return <AiPage />;
-    if (activeTab === "profile") return <ProfilePage />;
-    return <main className="pw-content-inner"><div className="pw-content-top"><h1>Dashboard</h1><div className="pw-search">⌕ Search chapters and doubts</div></div><div className="pw-dashboard-wrap"><JeeBlueprintDashboard /></div></main>;
-  };
-
-  return (
-    <div className="pw-platform">
-      <style>{PW_STYLE}</style>
-      <PwSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <div className="pw-main">
-        <PwTopbar activeLabel={activeLabel} />
-        {renderTab()}
+        <div className="modal-actions"><button onClick={onClose}>Cancel</button><button className="primary" onClick={() => { setProfile(draft); onClose(); }}>Save Profile</button></div>
       </div>
     </div>
   );
 }
+
+const styles = `
+* { box-sizing: border-box; }
+.app-shell { min-height: 100vh; display: grid; grid-template-columns: 290px 1fr; transition: background .2s, color .2s; }
+.light { --bg:#f7faff; --panel:#ffffff; --panel2:#f8fbff; --text:#0f172a; --muted:#64748b; --line:#e5edf7; --blue:#2563eb; --blueSoft:#eff6ff; --shadow:0 12px 30px rgba(15,23,42,.06); --sidebar:#ffffff; --top:#ffffff; }
+.dark { --bg:#07111f; --panel:#0b1626; --panel2:#101c2e; --text:#f8fafc; --muted:#97a6ba; --line:#1f2c40; --blue:#3b82f6; --blueSoft:#11233d; --shadow:0 18px 40px rgba(0,0,0,.25); --sidebar:#08111e; --top:#08111e; }
+.app-shell { background: var(--bg); color: var(--text); }
+.sidebar { position: sticky; top: 0; height: 100vh; background: var(--sidebar); border-right: 1px solid var(--line); padding: 22px 22px 18px; overflow-y: auto; }
+.logo-wrap { padding-bottom: 22px; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+.logo-img { width: 190px; height: auto; display: block; }
+.nav-group { margin: 22px 0; }
+.nav-group p { margin: 0 0 10px; color: var(--muted); font-size: 13px; font-weight: 800; letter-spacing: .12em; }
+.nav-group button { width: 100%; height: 48px; border: 0; background: transparent; color: var(--text); display: flex; align-items: center; gap: 14px; padding: 0 16px; border-radius: 10px; font-weight: 800; font-size: 16px; cursor: pointer; }
+.nav-group button:hover, .nav-group .nav-active { background: var(--blueSoft); color: var(--blue); }
+.nav-group .nav-active { border-left: 4px solid var(--blue); }
+.ai-help-card { margin-top: 26px; padding: 20px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(145deg, var(--panel2), var(--panel)); text-align: center; }
+.ai-help-icon { width: 74px; height: 74px; border-radius: 22px; display: grid; place-items: center; color: var(--blue); background: var(--blueSoft); margin: 0 auto 14px; }
+.ai-help-card strong { display: block; margin-bottom: 8px; }
+.ai-help-card p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+.ai-help-card button { width: 100%; height: 44px; border: 1px solid var(--blue); background: transparent; color: var(--blue); border-radius: 10px; font-weight: 800; cursor: pointer; }
+.main-area { min-width: 0; }
+.topbar { height: 96px; display: flex; align-items: center; gap: 18px; padding: 0 32px; background: var(--top); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; }
+.welcome { font-size: 18px; font-weight: 900; min-width: 230px; }
+.mobile-menu { display:none; }
+.class-select { position: relative; }
+.class-select > button { height: 52px; min-width: 170px; padding: 0 16px; border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-weight: 800; cursor: pointer; }
+.class-menu { position: absolute; top: 60px; left: 0; width: 190px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; z-index: 20; }
+.class-menu button { width: 100%; height: 48px; border: 0; background: transparent; color: var(--text); display: flex; align-items: center; justify-content: space-between; padding: 0 14px; cursor: pointer; font-weight: 800; }
+.class-menu button:hover { background: var(--blueSoft); color: var(--blue); }
+.global-search, .page-search { height: 52px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 12px; padding: 0 14px; }
+.global-search { flex: 1; max-width: 560px; }
+.global-search input, .page-search input, .ai-input-row input, .form-grid input, .form-grid select { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 16px; }
+kbd { border: 1px solid var(--line); padding: 3px 7px; border-radius: 6px; color: var(--muted); background: var(--panel2); font-size: 12px; }
+.theme-toggle { display: flex; border: 1px solid var(--line); border-radius: 999px; padding: 4px; background: var(--panel); }
+.theme-toggle button { height: 38px; padding: 0 13px; border: 0; border-radius: 999px; color: var(--text); background: transparent; display: flex; align-items: center; gap: 7px; font-weight: 800; cursor: pointer; }
+.theme-toggle .active { background: var(--blueSoft); color: var(--blue); }
+.plan-btn { height: 52px; border: 0; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border-radius: 18px; padding: 0 22px; font-weight: 900; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+.content { padding: 28px 32px 36px; max-width: 1500px; margin: 0 auto; }
+.page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+.page-head h1 { margin: 0 0 8px; font-size: 34px; letter-spacing: -.7px; }
+.page-head p { margin: 0; color: var(--muted); font-size: 16px; }
+.page-search { width: 380px; }
+.card, .hero-card, .item-card, .empty-card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+.hero-card { padding: 28px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 28px; margin-bottom: 18px; background-image: linear-gradient(rgba(37,99,235,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,.035) 1px, transparent 1px); background-size: 24px 24px; overflow: hidden; }
+.hero-left span { color: var(--blue); font-weight: 900; }
+.hero-left h2 { font-size: 28px; margin: 16px 0 8px; }
+.hero-left p { color: var(--muted); }
+.metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 28px; }
+.metric { border: 1px solid var(--line); background: var(--panel); border-radius: 12px; padding: 14px; display: flex; gap: 12px; align-items: center; }
+.metric strong, .metric span { display: block; } .metric span { color: var(--muted); font-size: 14px; margin-top: 4px; }
+.progress-side { display: grid; grid-template-columns: 170px 1fr 90px; align-items: center; gap: 18px; }
+.donut { width: 150px; height: 150px; border-radius: 999px; display: grid; place-items: center; text-align: center; border: 18px solid var(--blueSoft); box-shadow: inset 0 0 0 9px rgba(37,99,235,.08); }
+.donut strong { display: block; font-size: 30px; } .donut span { color: var(--muted); font-weight: 800; font-size: 13px; }
+.progress-item { display: grid; grid-template-columns: 90px 1fr 44px; gap: 12px; align-items: center; margin: 16px 0; }
+.progress-item span { color: var(--muted); font-size: 12px; display:block; margin-top:4px; }
+.progress-line { height: 7px; border-radius: 999px; background: var(--blueSoft); overflow: hidden; } .progress-line i { height:100%; display:block; border-radius:999px; }
+.hero-rocket { color: var(--blue); filter: drop-shadow(0 12px 22px rgba(37,99,235,.3)); }
+.dash-grid { display: grid; grid-template-columns: 1fr 1fr 1.1fr; gap: 18px; margin: 18px 0; }
+.card { padding: 22px; } .card h3 { margin: 0 0 18px; font-size: 20px; }
+.big-number { display: flex; align-items:center; gap: 12px; font-size: 30px; color: var(--blue); font-weight: 900; }
+.study-time-card p { color: var(--muted); }
+.bar-chart { height: 74px; display:flex; gap: 10px; align-items:end; margin-top:12px; } .bar-chart span { flex:1; background: linear-gradient(#3b82f6,#93c5fd); border-radius:8px 8px 0 0; }
+.card-title { display:flex; align-items:center; justify-content:space-between; gap:12px; } .card-title button { border:0; background:transparent; color:var(--blue); font-weight:800; cursor:pointer; display:flex; align-items:center; gap:6px; }
+.task { display:grid; grid-template-columns: 20px 1fr auto auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
+.check-box { width:18px;height:18px;border:1px solid var(--line); border-radius:5px; } .task em { font-style:normal; color:var(--blue); background:var(--blueSoft); padding:5px 9px; border-radius:999px; font-size:12px; } .task small { color:var(--muted); }
+.stat-row { height: 50px; border:1px solid var(--line); border-radius:10px; margin:10px 0; display:flex; align-items:center; justify-content:space-between; padding:0 14px; } .stat-row span { color:var(--muted); } .stat-row strong { color:var(--blue); }
+.bottom-grid { display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
+.activity { display:grid; grid-template-columns: 36px 1fr auto; gap:12px; align-items:center; padding:13px 0; border-bottom:1px solid var(--line); } .activity b { width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:var(--blueSoft); } .activity em { font-style:normal; padding:6px 12px;border-radius:999px;font-weight:800; } .green { background:#dcfce7;color:#15803d; } .blue { background:#dbeafe;color:#2563eb; }
+.action-grid { display:grid; grid-template-columns: repeat(2,1fr); gap:12px; } .action-card { text-align:left; padding:16px; border:1px solid var(--line); border-radius:12px; background:var(--panel2); color:var(--text); cursor:pointer; } .action-card strong,.action-card span{display:block;} .action-card span{color:var(--muted); margin-top:6px;}
+.search-results { margin: 18px 0; } .result-list { display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:10px; } .result-list div { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; } .result-list span { display:block; color:var(--muted); margin-top:5px; }
+.cards-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap:18px; } .item-card { padding:22px; } .item-card span { float:right; color:var(--blue); background:var(--blueSoft); padding:7px 12px; border-radius:999px; font-size:12px; font-weight:800; } .item-card h3 { font-size:23px; margin:8px 0 14px; line-height:1.35; } .item-card p { color:var(--muted); line-height:1.7; min-height:60px; } .item-card button { width:100%; height:48px; border:0; border-radius:12px; background:var(--blue); color:white; font-weight:900; margin-top:10px; cursor:pointer; }
+.empty-card { padding:28px; color:var(--muted); }
+.ai-page { display:grid; grid-template-columns: 90px 1fr; gap:18px; align-items:center; } .ai-bot-large { width:76px;height:76px;border-radius:24px;display:grid;place-items:center;background:var(--blueSoft); color:var(--blue); } .ai-page p { color:var(--muted); line-height:1.7; } .ai-input-row { display:flex; gap:12px; } .ai-input-row input { height:52px; border:1px solid var(--line); border-radius:12px; padding:0 14px; background:var(--panel2); } .ai-input-row button { width:120px; border:0; border-radius:12px; background:var(--line); color:var(--muted); }
+.profile-hero { display:grid; grid-template-columns: 170px 1fr 1.4fr; gap:24px; align-items:center; margin-bottom:18px; } .avatar-wrap { position:relative; } .avatar { width:150px;height:150px;border-radius:999px;background:linear-gradient(135deg,#facc15,#f97316);display:grid;place-items:center;font-size:58px;color:#fff;font-weight:900; } .avatar-wrap button { position:absolute;right:10px;bottom:10px;width:44px;height:44px;border:0;border-radius:999px;background:var(--blue);color:#fff;display:grid;place-items:center; }
+.profile-main-info h2 { margin:0 0 14px; font-size:32px; } .profile-main-info p { display:flex;align-items:center;gap:10px;color:var(--muted); } .plan-chip { display:inline-flex;align-items:center;gap:8px;background:var(--blueSoft);color:var(--blue);padding:9px 13px;border-radius:8px;font-weight:900; }
+.profile-rocket { display:flex; align-items:center; gap:26px; border-left:1px solid var(--line); padding-left:34px; color:var(--blue); } .profile-rocket p { color:var(--muted); line-height:1.7; }
+.profile-grid { display:grid; grid-template-columns: 1fr 1fr .8fr; gap:18px; } .profile-info.wide { grid-column: span 2; } .profile-row { display:grid; grid-template-columns: 180px 1fr; padding:12px 0; border-bottom:1px solid var(--line); } .profile-row span { color:var(--muted); } .profile-row strong { font-weight:700; }
+.account-actions button { width:100%;height:54px;border-radius:10px;border:1px solid var(--blue);color:var(--blue);background:transparent;margin-bottom:12px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:10px; } .account-actions .primary { background:var(--blue); color:white; } .account-actions .danger { border-color:#ef4444;color:#dc2626;background:rgba(239,68,68,.08); }
+.safe-box { margin-top:20px;padding:18px;border-radius:12px;background:var(--blueSoft);color:var(--blue); } .safe-box p { color:var(--muted); }
+.modal-backdrop { position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:50;display:grid;place-items:center;padding:20px; } .modal-card { width:min(900px,100%);max-height:90vh;overflow:auto;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 30px 90px rgba(0,0,0,.35); } .modal-head { display:flex;justify-content:space-between;align-items:center; } .modal-head button { border:0;background:var(--blueSoft);color:var(--blue);width:40px;height:40px;border-radius:999px; }
+.form-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0; } .form-grid label { font-weight:800;color:var(--muted); } .form-grid input,.form-grid select { margin-top:8px;height:46px;border:1px solid var(--line);border-radius:10px;padding:0 12px;background:var(--panel2); }
+.modal-actions { display:flex;justify-content:flex-end;gap:12px; } .modal-actions button { height:46px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text);padding:0 18px;font-weight:900; } .modal-actions .primary { background:var(--blue);color:white;border-color:var(--blue); }
+.overlay { display:none; }
+@media (max-width: 1100px) { .app-shell { grid-template-columns: 1fr; } .sidebar { position: fixed; left:-310px; z-index:40; transition:left .2s; width:290px; } .sidebar.open { left:0; } .overlay { display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:30;border:0; } .mobile-menu { display:grid;place-items:center;width:42px;height:42px;border:0;border-radius:10px;background:var(--blueSoft);color:var(--blue); } .topbar { flex-wrap:wrap;height:auto;padding:16px; } .welcome { min-width:0; } .global-search { order:5;max-width:none;width:100%;flex-basis:100%; } .content { padding:20px 16px; } .hero-card,.dash-grid,.bottom-grid,.profile-hero,.profile-grid { grid-template-columns:1fr; } .profile-info.wide { grid-column:auto; } .page-head { flex-direction:column; } .page-search { width:100%; } .progress-side { grid-template-columns:1fr; } .metric-row { grid-template-columns:1fr; } .theme-toggle { order:3; } .profile-rocket { border-left:0;padding-left:0; } }
+@media (max-width: 650px) { .form-grid,.action-grid { grid-template-columns:1fr; } .task { grid-template-columns: 20px 1fr; } .task em,.task small { margin-left:30px; } .profile-row { grid-template-columns:1fr; gap:5px; } .hero-left h2 { font-size:24px; } .page-head h1 { font-size:28px; } .logo-img { width:160px; } }
+`;
