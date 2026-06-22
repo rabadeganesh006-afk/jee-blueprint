@@ -246,3 +246,16 @@ summary { font-weight: 900; cursor: pointer; }
   .heroCard, .grid3, .grid2, .cards4, .profileHero, .profileGrid { grid-template-columns: 1fr; }
   .progressBlock, .statPills, .detailsGrid { grid-template-columns: 1fr; }
 }
+
+.aiTutorPanel { display: flex; flex-direction: column; gap: 18px; }
+.aiTutorTop { display: flex; align-items: center; gap: 14px; }
+.aiAvatar { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 20px; background: rgba(37, 99, 235, 0.12); color: var(--blue); }
+.aiExamples { display: flex; flex-wrap: wrap; gap: 10px; }
+.aiExamples button { border: 1px solid var(--border); background: var(--soft); color: var(--text); border-radius: 999px; padding: 10px 14px; cursor: pointer; }
+.aiInput { width: 100%; resize: vertical; min-height: 140px; border-radius: 18px; border: 1px solid var(--border); background: var(--card); color: var(--text); padding: 16px; font: inherit; line-height: 1.6; outline: none; }
+.aiInput:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(37,99,235,.12); }
+.aiActionRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.aiActionRow .primary { display: inline-flex; align-items: center; gap: 8px; }
+.aiError { border: 1px solid rgba(239, 68, 68, .35); background: rgba(239, 68, 68, .08); color: #ef4444; padding: 12px 14px; border-radius: 14px; }
+.aiAnswer { border: 1px solid var(--border); background: var(--soft); border-radius: 18px; padding: 18px; }
+.aiAnswer pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: inherit; line-height: 1.7; color: var(--text); }

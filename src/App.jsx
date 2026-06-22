@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Authenticator, ThemeProvider, createTheme } from '@aws-amplify/ui-react';
+import { generateClient } from 'aws-amplify/api';
 import '@aws-amplify/ui-react/styles.css';
 import {
   BookOpen, Bot, Calendar, CheckCircle2, ChevronDown, Circle, Clock, FileText,
@@ -289,7 +290,7 @@ function AppShell({ user, signOut }) {
         <div className="aiHelp">
           <Bot size={46} />
           <strong>Chat. Learn. Improve.</strong>
-          <span>AI Tutor नंतर secure backend ने जोडू.</span>
+          <span>AI Tutor secure backend मधून चालेल.</span>
           <button onClick={() => setActive('ai')}>Open AI Tutor</button>
         </div>
       </aside>
@@ -335,7 +336,7 @@ function AppShell({ user, signOut }) {
         {data.active === 'pyq' && <PyqPage data={data} selectedPyq={selectedPyq} setSelectedPyq={setSelectedPyq} markPyqSolved={markPyqSolved} />}
         {data.active === 'material' && <MaterialPage data={data} toggleMaterial={toggleMaterial} />}
         {data.active === 'tests' && <TestsPage data={data} testScore={testScore} setTestScore={setTestScore} saveTest={saveTest} />}
-        {data.active === 'ai' && <AiPage />}
+        {data.active === 'ai' && <AiPage data={data} />}
         {data.active === 'profile' && <ProfilePage
           data={data} profileDraft={profileDraft} setProfileDraft={setProfileDraft} editingProfile={editingProfile}
           setEditingProfile={setEditingProfile} saveProfile={saveProfile} signOut={signOut}
@@ -380,7 +381,7 @@ function Dashboard({ data, progress, doneCount, totalChapters, todayMinutes, pyq
       </div>
       <div className="grid2">
         <div className="card"><h3>Syllabus Tracker</h3><p className="muted">Chapter complete केल्यावरच progress वाढेल.</p>{Object.entries(CHAPTERS).map(([subject, chapters]) => <details key={subject} open={subject === 'Physics'}><summary>{subject}</summary>{chapters.slice(0, 6).map((chapter) => <div className="chapterRow" key={chapter}><button onClick={() => toggleChapter(subject, chapter)}>{data.chaptersDone?.[`${subject}:${chapter}`] ? <CheckCircle2 size={18} /> : <Circle size={18} />}</button><span>{chapter}</span><button onClick={() => toggleFlag(subject, chapter)} className={data.chaptersFlagged?.[`${subject}:${chapter}`] ? 'flagged' : ''}>★</button></div>)}</details>)}</div>
-        <div className="card"><h3>Quick Actions</h3><div className="quickActions"><button onClick={() => setActive('pyq')}><Pi /> <b>PYQ Practice</b><span>Practice past years' questions</span></button><button onClick={() => setActive('tests')}><CheckCircle2 /> <b>Test Series</b><span>Add manual test scores</span></button><button onClick={() => setActive('ai')}><Bot /> <b>AI Tutor</b><span>Secure backend coming next</span></button><button onClick={() => setActive('material')}><BookOpen /> <b>Study Material</b><span>Mark notes as read</span></button></div><h3 className="mt">Recent Activity</h3>{(data.activities || []).length === 0 ? <p className="empty">No activity yet. Start marking chapters, PYQs or study time.</p> : data.activities.slice(0, 5).map((a) => <div className="activity" key={a.id}><CheckCircle2 size={18}/><span>{a.text}</span><small>{a.date}</small></div>)}</div>
+        <div className="card"><h3>Quick Actions</h3><div className="quickActions"><button onClick={() => setActive('pyq')}><Pi /> <b>PYQ Practice</b><span>Practice past years' questions</span></button><button onClick={() => setActive('tests')}><CheckCircle2 /> <b>Test Series</b><span>Add manual test scores</span></button><button onClick={() => setActive('ai')}><Bot /> <b>AI Tutor</b><span>Ask doubts & get instant help</span></button><button onClick={() => setActive('material')}><BookOpen /> <b>Study Material</b><span>Mark notes as read</span></button></div><h3 className="mt">Recent Activity</h3>{(data.activities || []).length === 0 ? <p className="empty">No activity yet. Start marking chapters, PYQs or study time.</p> : data.activities.slice(0, 5).map((a) => <div className="activity" key={a.id}><CheckCircle2 size={18}/><span>{a.text}</span><small>{a.date}</small></div>)}</div>
       </div>
     </section>
   );
@@ -399,8 +400,103 @@ function TestsPage({ data, testScore, setTestScore, saveTest }) {
   return <section className="page"><div className="pageHead"><h1>Test Series</h1><p>आता score manually add करता येतो. नंतर timer + MCQ engine add करू.</p></div><div className="grid2"><div className="card"><h3>Add test score</h3><input value={testScore.name} onChange={(e) => setTestScore({ ...testScore, name: e.target.value })} placeholder="Test name"/><input value={testScore.score} onChange={(e) => setTestScore({ ...testScore, score: e.target.value })} placeholder="Score" type="number"/><input value={testScore.total} onChange={(e) => setTestScore({ ...testScore, total: e.target.value })} placeholder="Total marks" type="number"/><button className="primary" onClick={saveTest}>Save test score</button></div><div className="card"><h3>Saved tests</h3>{(data.tests || []).length === 0 ? <p className="empty">No test scores added yet.</p> : data.tests.map((t) => <div className="quickStat" key={t.id}><span>{t.name}<small>{t.date}</small></span><b>{t.score}/{t.total}</b></div>)}</div></div></section>;
 }
 
-function AiPage() {
-  return <section className="page"><div className="pageHead"><h1>AI Tutor</h1><p>Frontend मध्ये API key ठेवायची नाही. इथे secure backend जोडल्यावर AI चालू होईल.</p></div><div className="card aiLarge"><Bot size={54}/><h2>AI Coming Soon</h2><p>Next step: AWS Lambda/Function + Claude/Bedrock backend. Free limit आणि Pro limit नंतर add करू.</p><div className="inlineForm"><input placeholder="Example: explain Newton's law" disabled /><button disabled><Send size={18}/></button></div></div></section>;
+function AiPage({ data }) {
+  const client = useMemo(() => generateClient(), []);
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function askTutor() {
+    const text = question.trim();
+    if (!text) {
+      setError('पहिले doubt/question लिही.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setAnswer('');
+
+    try {
+      const context = JSON.stringify({
+        stream: data.stream,
+        profile: {
+          className: data.profile?.className,
+          targetExam: data.profile?.targetExam,
+          weakAreas: data.profile?.weakAreas,
+          preferredContent: data.profile?.preferredContent,
+        },
+      });
+
+      const result = await client.queries.askAi({ question: text, context });
+      const aiText = result?.data || '';
+
+      if (result?.errors?.length) {
+        setError(result.errors[0]?.message || 'AI request failed.');
+      } else {
+        setAnswer(aiText);
+      }
+    } catch (err) {
+      setError(err?.message || 'AI connection failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function example(text) {
+    setQuestion(text);
+    setAnswer('');
+    setError('');
+  }
+
+  return (
+    <section className="page">
+      <div className="pageHead">
+        <h1>AI Tutor</h1>
+        <p>Secure AWS backend मधून Gemini AI जोडले आहे. API key frontend/GitHub मध्ये नाही.</p>
+      </div>
+
+      <div className="card aiTutorPanel">
+        <div className="aiTutorTop">
+          <div className="aiAvatar"><Bot size={32} /></div>
+          <div>
+            <h2>Ask JEE Blueprint AI</h2>
+            <p>Physics, Chemistry, Maths doubts, study plan, revision strategy विचार.</p>
+          </div>
+        </div>
+
+        <div className="aiExamples">
+          <button onClick={() => example('Explain Kirchhoff laws with one JEE level example')}>Kirchhoff laws explain कर</button>
+          <button onClick={() => example('Give me a 7 day revision plan for Chemical Bonding')}>7 day revision plan</button>
+          <button onClick={() => example('How should I revise Integration for JEE Advanced?')}>Integration strategy</button>
+        </div>
+
+        <textarea
+          className="aiInput"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="Type your doubt in English, Hindi or Marathi..."
+          rows={5}
+        />
+
+        <div className="aiActionRow">
+          <button className="primary" onClick={askTutor} disabled={loading}>
+            {loading ? 'AI thinking...' : 'Ask AI Tutor'} <Send size={18} />
+          </button>
+          <small>Free users साठी नंतर daily limit add करू शकतो.</small>
+        </div>
+
+        {error && <div className="aiError">{error}</div>}
+        {answer && (
+          <div className="aiAnswer">
+            <h3>Answer</h3>
+            <pre>{answer}</pre>
+          </div>
+        )}
+      </div>
+    </section>
+  );
 }
 
 function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setEditingProfile, saveProfile, signOut }) {
