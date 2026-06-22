@@ -1,3 +1,3 @@
-# JEE Blueprint V4
+# JEE Blueprint V8
 
-PW-inspired original layout with sidebar, dark topbar, course cards, library, PYQ, tests, AI placeholder and profile pages. Does not copy PW branding/images/logos.
+Functional version: no fake progress. User actions update study time, chapter progress, PYQ solved count, profile data, search, theme, class selection and recent activity using browser localStorage.
