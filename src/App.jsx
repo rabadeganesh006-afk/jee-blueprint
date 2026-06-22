@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Authenticator, ThemeProvider, createTheme } from '@aws-amplify/ui-react';
 import { generateClient } from 'aws-amplify/api';
 import '@aws-amplify/ui-react/styles.css';
@@ -46,6 +46,42 @@ const percentText = (value) => {
   return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}%`;
 };
 const minutesText = (minutes = 0) => `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+const DEFAULT_TIMER_MINUTES = 150;
+const normalizeTimer = (timer = {}) => {
+  const currentDate = todayKey();
+  if (!timer || timer.date !== currentDate) {
+    return { date: currentDate, targetMinutes: DEFAULT_TIMER_MINUTES, elapsedSeconds: 0, running: false, startedAt: null };
+  }
+  return {
+    date: currentDate,
+    targetMinutes: Number(timer.targetMinutes || DEFAULT_TIMER_MINUTES),
+    elapsedSeconds: Number(timer.elapsedSeconds || 0),
+    running: !!timer.running,
+    startedAt: timer.startedAt || null,
+  };
+};
+const getLiveTimerSeconds = (timer = {}, now = Date.now()) => {
+  const normalized = normalizeTimer(timer);
+  const extra = normalized.running && normalized.startedAt ? Math.max(0, Math.floor((now - Number(normalized.startedAt)) / 1000)) : 0;
+  const limit = Math.max(1, Number(normalized.targetMinutes || DEFAULT_TIMER_MINUTES) * 60);
+  return Math.min(normalized.elapsedSeconds + extra, limit);
+};
+const clockText = (seconds = 0) => {
+  const safe = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(safe / 3600);
+  const m = Math.floor((safe % 3600) / 60);
+  const sec = safe % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+};
+const minutesToTimeInput = (minutes = DEFAULT_TIMER_MINUTES) => {
+  const safe = Math.max(1, Math.min(23 * 60 + 59, Number(minutes) || DEFAULT_TIMER_MINUTES));
+  return `${String(Math.floor(safe / 60)).padStart(2, '0')}:${String(safe % 60).padStart(2, '0')}`;
+};
+const timeInputToMinutes = (value) => {
+  const [h = '0', m = '0'] = String(value || '').split(':');
+  const total = (Number(h) || 0) * 60 + (Number(m) || 0);
+  return Math.max(1, total || DEFAULT_TIMER_MINUTES);
+};
 
 const PYQ_SETS = [
   { id: 'current-electricity', title: 'Current Electricity', subject: 'Physics', questions: 25, difficulty: 'Medium' },
@@ -68,6 +104,7 @@ const defaultData = (email = '') => ({
   stream: '12th IIT JEE',
   active: 'dashboard',
   studyByDate: {},
+  studyTimer: { date: todayKey(), targetMinutes: DEFAULT_TIMER_MINUTES, elapsedSeconds: 0, running: false, startedAt: null },
   topicsDone: {},
   topicsFlagged: {},
   pyqSolved: {},
@@ -94,7 +131,7 @@ const defaultData = (email = '') => ({
 
 function makeStorageKey(user) {
   const email = user?.signInDetails?.loginId || user?.attributes?.email || user?.username || 'student';
-  return `jee-blueprint-v14-interactive-topic-planner-${email}`;
+  return `jee-blueprint-v15-focus-timer-profile-${email}`;
 }
 
 function loadData(key, email) {
@@ -151,6 +188,12 @@ function AppShell({ user, signOut }) {
   const [newTask, setNewTask] = useState('');
   const [selectedPyq, setSelectedPyq] = useState(null);
   const [testScore, setTestScore] = useState({ name: '', score: '', total: '' });
+  const [nowTick, setNowTick] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   function update(patchOrFn) {
     setData((current) => {
@@ -172,7 +215,10 @@ function AppShell({ user, signOut }) {
   const doneCount = allTopics.filter(({ topic }) => data.topicsDone?.[topic.id]).length;
   const totalTopics = allTopics.length;
   const progressValue = percentNumber(doneCount, totalTopics);
-  const todayMinutes = data.studyByDate?.[todayKey()] || 0;
+  const normalizedTimer = normalizeTimer(data.studyTimer);
+  const liveTimerSeconds = getLiveTimerSeconds(normalizedTimer, nowTick);
+  const manualTodayMinutes = Number(data.studyByDate?.[todayKey()] || 0);
+  const todayMinutes = manualTodayMinutes + Math.floor(liveTimerSeconds / 60);
   const pyqSolved = Object.values(data.pyqSolved || {}).reduce((sum, value) => sum + Number(value || 0), 0);
   const avgMinutes = (() => {
     const values = Object.values(data.studyByDate || {}).map(Number).filter((v) => v > 0);
@@ -218,6 +264,68 @@ function AppShell({ user, signOut }) {
       activities: pushActivity(current, `Added ${minutes} minutes study time`)
     }));
   }
+
+  function startStudyTimer(goalMinutes = DEFAULT_TIMER_MINUTES) {
+    update((current) => {
+      const timer = normalizeTimer(current.studyTimer);
+      const elapsedSeconds = getLiveTimerSeconds(timer);
+      const targetMinutes = Math.max(1, Number(goalMinutes || timer.targetMinutes || DEFAULT_TIMER_MINUTES));
+      const alreadyReached = elapsedSeconds >= targetMinutes * 60;
+      return {
+        ...current,
+        studyTimer: {
+          ...timer,
+          targetMinutes,
+          elapsedSeconds: alreadyReached ? 0 : elapsedSeconds,
+          running: true,
+          startedAt: Date.now(),
+        },
+        activities: pushActivity(current, `Started study timer (${minutesText(targetMinutes)} target)`)
+      };
+    });
+  }
+
+  function pauseStudyTimer() {
+    update((current) => {
+      const timer = normalizeTimer(current.studyTimer);
+      const elapsedSeconds = getLiveTimerSeconds(timer);
+      return {
+        ...current,
+        studyTimer: { ...timer, elapsedSeconds, running: false, startedAt: null },
+        activities: pushActivity(current, `Paused study timer at ${clockText(elapsedSeconds)}`)
+      };
+    });
+  }
+
+  function resetStudyTimer() {
+    update((current) => {
+      const timer = normalizeTimer(current.studyTimer);
+      const key = todayKey();
+      const studyByDate = { ...(current.studyByDate || {}), [key]: 0 };
+      return {
+        ...current,
+        studyByDate,
+        studyTimer: { ...timer, elapsedSeconds: 0, running: false, startedAt: null },
+        activities: pushActivity(current, 'Reset today study timer')
+      };
+    });
+  }
+
+  useEffect(() => {
+    const timer = normalizeTimer(data.studyTimer);
+    const elapsedSeconds = getLiveTimerSeconds(timer, nowTick);
+    const targetSeconds = Math.max(1, Number(timer.targetMinutes || DEFAULT_TIMER_MINUTES) * 60);
+    if (timer.running && elapsedSeconds >= targetSeconds) {
+      update((current) => {
+        const currentTimer = normalizeTimer(current.studyTimer);
+        return {
+          ...current,
+          studyTimer: { ...currentTimer, elapsedSeconds: targetSeconds, running: false, startedAt: null },
+          activities: pushActivity(current, `Completed study timer goal: ${minutesText(currentTimer.targetMinutes || DEFAULT_TIMER_MINUTES)}`)
+        };
+      });
+    }
+  }, [nowTick, data.studyTimer]);
 
   function toggleTopic(topic, chapterTitle) {
     const activityId = `topic-complete-${topic.id}`;
@@ -336,7 +444,7 @@ function AppShell({ user, signOut }) {
           <button className="planBtn"><Trophy size={16} /> Free Plan</button>
         </header>
 
-        {data.active === 'dashboard' && <Dashboard data={data} planner={planner} progressValue={progressValue} doneCount={doneCount} totalTopics={totalTopics} totalChapters={allChapters.length} todayMinutes={todayMinutes} pyqSolved={pyqSolved} avgMinutes={avgMinutes} addStudyMinutes={addStudyMinutes} toggleTopic={toggleTopic} toggleFlagTopic={toggleFlagTopic} addTask={addTask} newTask={newTask} setNewTask={setNewTask} toggleTask={toggleTask} deleteTask={deleteTask} deleteActivity={deleteActivity} clearActivities={clearActivities} setActive={setActive} updateProfileFields={updateProfileFields} query={query} />}
+        {data.active === 'dashboard' && <Dashboard data={data} planner={planner} progressValue={progressValue} doneCount={doneCount} totalTopics={totalTopics} totalChapters={allChapters.length} todayMinutes={todayMinutes} liveTimerSeconds={liveTimerSeconds} pyqSolved={pyqSolved} avgMinutes={avgMinutes} startStudyTimer={startStudyTimer} pauseStudyTimer={pauseStudyTimer} resetStudyTimer={resetStudyTimer} toggleTopic={toggleTopic} toggleFlagTopic={toggleFlagTopic} addTask={addTask} newTask={newTask} setNewTask={setNewTask} toggleTask={toggleTask} deleteTask={deleteTask} deleteActivity={deleteActivity} clearActivities={clearActivities} setActive={setActive} query={query} />}
         {data.active === 'pyq' && <PyqPage data={data} selectedPyq={selectedPyq} setSelectedPyq={setSelectedPyq} markPyqSolved={markPyqSolved} query={query} />}
         {data.active === 'material' && <MaterialPage data={data} toggleMaterial={toggleMaterial} query={query} />}
         {data.active === 'tests' && <TestsPage data={data} testScore={testScore} setTestScore={setTestScore} saveTest={saveTest} />}
@@ -347,28 +455,38 @@ function AppShell({ user, signOut }) {
   );
 }
 
-function Dashboard({ data, planner, progressValue, doneCount, totalTopics, totalChapters, todayMinutes, pyqSolved, avgMinutes, addStudyMinutes, toggleTopic, toggleFlagTopic, addTask, newTask, setNewTask, toggleTask, deleteTask, deleteActivity, clearActivities, setActive, updateProfileFields, query }) {
+function Dashboard({ data, planner, progressValue, doneCount, totalTopics, totalChapters, todayMinutes, liveTimerSeconds, pyqSolved, avgMinutes, startStudyTimer, pauseStudyTimer, resetStudyTimer, toggleTopic, toggleFlagTopic, addTask, newTask, setNewTask, toggleTask, deleteTask, deleteActivity, clearActivities, setActive, query }) {
   const pending = (data.tasks || []).filter((t) => !t.done);
   const flaggedCount = Object.values(data.topicsFlagged || {}).filter(Boolean).length;
-  const [targetDraft, setTargetDraft] = useState({ targetExam: data.profile.targetExam || '', targetDate: data.profile.targetDate || '' });
   const [subjectFilter, setSubjectFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
-  const left = daysLeft(data.profile.targetDate);
+  const timer = normalizeTimer(data.studyTimer);
+  const [goalInput, setGoalInput] = useState(minutesToTimeInput(timer.targetMinutes));
   const q = query.trim().toLowerCase();
   const visibleActivities = (data.activities || []).filter((activity) => !activity.text?.startsWith('Unchecked topic:'));
+  const allPlannerTopics = Object.entries(planner).flatMap(([subject, chapters]) => chapters.flatMap((chapter) => chapter.topics.map((topic) => ({ subject, chapter, topic }))));
+  const nextPending = allPlannerTopics.find(({ topic }) => !data.topicsDone?.[topic.id]);
+  const nextFlagged = allPlannerTopics.find(({ topic }) => data.topicsFlagged?.[topic.id] && !data.topicsDone?.[topic.id]);
+  const timerTargetSeconds = Math.max(60, Number(timer.targetMinutes || DEFAULT_TIMER_MINUTES) * 60);
+  const timerPct = Math.min(100, (liveTimerSeconds / timerTargetSeconds) * 100);
+  const remainingSeconds = Math.max(0, timerTargetSeconds - liveTimerSeconds);
+
+  useEffect(() => {
+    setGoalInput(minutesToTimeInput(timer.targetMinutes));
+  }, [timer.targetMinutes]);
 
   return (
     <section className="page">
-      <div className="pageHead"><h1>Dashboard</h1><p>Topic-level planner is active. Progress changes only when you tick lecture topics, solve PYQs, or add study time.</p></div>
+      <div className="pageHead"><h1>Dashboard</h1><p>Track topics, run a real study timer, and continue with your next focus item.</p></div>
       <div className="heroCard compactHero">
         <div className="heroLeft">
           <span className="blueLabel">Your Learning Overview</span>
           <h2>{doneCount === 0 ? 'Start building momentum!' : 'Keep building momentum!'}</h2>
           <p>Today: <b>{formatDate(new Date())}</b></p>
           <div className="statPills interactivePills">
-            <button onClick={() => setActive('profile')}><CalendarDays size={20} /><b>{data.profile.targetExam || 'Target exam not set'}</b><span>{data.profile.targetDate ? `${formatDate(data.profile.targetDate)}${left !== null ? ` • ${left >= 0 ? `${left} days left` : `${Math.abs(left)} days passed`}` : ''}` : 'Set the date in Profile'}</span></button>
+            <button onClick={() => setStatusFilter('Completed')}><CheckCircle2 size={20} /><b>{doneCount} / {totalTopics} topics</b><span>Completed topics</span></button>
             <button onClick={() => setStatusFilter(statusFilter === 'Flagged' ? 'All' : 'Flagged')}><Target size={20} /><b>{flaggedCount} flagged</b><span>{statusFilter === 'Flagged' ? 'Showing flagged topics' : 'Show priority topics'}</span></button>
-            <button onClick={() => addStudyMinutes(15)}><Clock size={20} /><b>{minutesText(todayMinutes)} today</b><span>Tap to add +15m</span></button>
+            <button className="studyTimePill"><Clock size={20} /><b>Today's Study Time</b><span>{minutesText(todayMinutes)} • {timer.running ? 'Timer running' : liveTimerSeconds > 0 ? 'Timer paused' : 'Not started'}</span></button>
           </div>
           <div className="filterChips">
             {['All', 'Pending', 'Completed', 'Flagged'].map((filter) => <button key={filter} className={statusFilter === filter ? 'active' : ''} onClick={() => setStatusFilter(filter)}>{filter}</button>)}
@@ -388,8 +506,8 @@ function Dashboard({ data, planner, progressValue, doneCount, totalTopics, total
       </div>
 
       <div className="grid3 tightGrid">
-        <div className="card"><h3>Exam Target</h3><p className="muted">Set the target exam name and date manually.</p><input value={targetDraft.targetExam} onChange={(e) => setTargetDraft({ ...targetDraft, targetExam: e.target.value })} placeholder="JEE Advanced 2027" /><input value={targetDraft.targetDate} onChange={(e) => setTargetDraft({ ...targetDraft, targetDate: e.target.value })} type="date" /><button className="primary" onClick={() => updateProfileFields(targetDraft)}>Save target</button></div>
-        <div className="card"><h3>Today's Study Time</h3><div className="bigNumber">{minutesText(todayMinutes)}</div><p>Total study time today</p><div className="btnRow"><button onClick={() => addStudyMinutes(15)}>+15m</button><button onClick={() => addStudyMinutes(30)}>+30m</button><button onClick={() => addStudyMinutes(60)}>+60m</button></div></div>
+        <div className="card timerCard"><h3><Clock size={19}/> Today's Study Time</h3><div className="timerDisplay">{clockText(liveTimerSeconds)}</div><p className="muted">Goal: {minutesText(timer.targetMinutes || DEFAULT_TIMER_MINUTES)} • Remaining: {clockText(remainingSeconds)}</p><div className="timerProgress"><span style={{ width: `${timerPct}%` }} /></div><label className="timerGoal"><span>Set focus timer</span><input type="time" value={goalInput} onChange={(e) => setGoalInput(e.target.value)} /></label><div className="btnRow timerBtns"><button className="primary" onClick={() => startStudyTimer(timeInputToMinutes(goalInput))}>{timer.running ? 'Running' : liveTimerSeconds > 0 ? 'Resume' : 'Start'}</button><button onClick={pauseStudyTimer} disabled={!timer.running}>Stop</button><button onClick={resetStudyTimer}>Reset</button></div></div>
+        <div className="card focusCard"><h3>Today’s Focus</h3><div className="focusItem"><span>Next pending topic</span><b>{nextPending ? nextPending.topic.title : 'All visible topics completed'}</b><small>{nextPending ? `${nextPending.subject} • ${nextPending.chapter.title}` : 'Use filters or add more practice.'}</small></div><div className="focusItem"><span>Priority topic</span><b>{nextFlagged ? nextFlagged.topic.title : 'No flagged topic yet'}</b><small>{nextFlagged ? `${nextFlagged.subject} • ${nextFlagged.chapter.title}` : 'Tap the star on any topic to flag it.'}</small></div><button onClick={() => setStatusFilter('Pending')}>Show pending topics</button></div>
         <div className="card"><h3>Quick Stats</h3><div className="quickStat"><span>Topics Completed</span><b>{doneCount} / {totalTopics}</b></div><div className="quickStat"><span>Chapters Loaded</span><b>{totalChapters}</b></div><div className="quickStat"><span>Progress</span><b>{percentText(progressValue)}</b></div><div className="quickStat"><span>PYQs Solved</span><b>{pyqSolved}</b></div><div className="quickStat"><span>Avg. Study Time / Day</span><b>{minutesText(avgMinutes)}</b></div></div>
       </div>
 
@@ -478,7 +596,7 @@ function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setE
     ['language', 'Preferred Language', 'text'], ['studyGoal', 'Study Goal', 'text'], ['dailyStudyTime', 'Daily Study Time', 'text'], ['weakAreas', 'Weak Areas', 'text'], ['preferredContent', 'Preferred Content Type', 'text'],
   ];
   const left = daysLeft(data.profile.targetDate);
-  return <section className="page"><div className="pageHead"><h1>Profile</h1><p>Update the student name, exam target, and date here. Sign out is available here.</p></div><div className="profileHero"><div className="avatar">👨‍🎓</div><div><h2>{data.profile.fullName || 'Student Profile'}</h2><p>{data.profile.email || 'Email not available'}</p><span className="badge">{data.profile.targetExam || 'Target not set'}</span></div><div className="targetSummary"><b>{data.profile.targetDate ? formatDate(data.profile.targetDate) : 'Date not set'}</b><span>{left === null ? 'Set target date' : left >= 0 ? `${left} days left` : `${Math.abs(left)} days passed`}</span></div></div><div className="profileGrid"><div className="card wide"><div className="between"><h3>Profile Details</h3>{editingProfile ? <button onClick={saveProfile}><Save size={16}/> Save</button> : <button onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit</button>}</div><div className="detailsGrid">{fields.map(([key, label, type]) => <label key={key}><span>{label}</span>{editingProfile && key !== 'email' ? <input value={profileDraft[key] || ''} onChange={(e) => setProfileDraft({ ...profileDraft, [key]: e.target.value })} placeholder={`Enter ${label}`} type={type} /> : <b>{key === 'targetDate' && data.profile[key] ? formatDate(data.profile[key]) : data.profile[key] || '-'}</b>}</label>)}</div></div><div className="card actions"><h3>Account Actions</h3><button className="primary" onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit Profile</button>{editingProfile && <button onClick={saveProfile}><Save size={16}/> Save Changes</button>}<button className="danger" onClick={signOut}><LogOut size={16}/> Sign out</button><button onClick={resetLocalData}><RotateCcw size={16}/> Reset this browser data</button><div className="safeBox">🔒 Data is currently saved in this browser. Cloud sync can be added later.</div></div></div></section>;
+  return <section className="page"><div className="pageHead"><h1>Profile</h1><p>Update the student name, exam target, and date here. Sign out is available here.</p></div><div className="profileHero"><div className="avatar">👨‍🎓</div><div><h2>{data.profile.fullName || 'Student Profile'}</h2><p>{data.profile.email || 'Email not available'}</p><span className="badge">{data.profile.targetExam || 'Target not set'}</span></div><div className="targetSummary"><b>{data.profile.targetDate ? formatDate(data.profile.targetDate) : 'Date not set'}</b><span>{left === null ? 'Set target date' : left >= 0 ? `${left} days left` : `${Math.abs(left)} days passed`}</span></div></div><div className="card profileTargetCard"><div><h3>Exam Target</h3><p className="muted">Set the exam name and target date here. Dashboard will only show study progress.</p></div><div className="targetForm"><label><span>Target Exam Name</span><input value={profileDraft.targetExam || ''} onChange={(e) => setProfileDraft({ ...profileDraft, targetExam: e.target.value })} placeholder="JEE Advanced 2027" /></label><label><span>Target Exam Date</span><input value={profileDraft.targetDate || ''} onChange={(e) => setProfileDraft({ ...profileDraft, targetDate: e.target.value })} type="date" /></label><button className="primary" onClick={saveProfile}><Save size={16}/> Save Target</button></div></div><div className="profileGrid"><div className="card wide"><div className="between"><h3>Profile Details</h3>{editingProfile ? <button onClick={saveProfile}><Save size={16}/> Save</button> : <button onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit</button>}</div><div className="detailsGrid">{fields.map(([key, label, type]) => <label key={key}><span>{label}</span>{editingProfile && key !== 'email' ? <input value={profileDraft[key] || ''} onChange={(e) => setProfileDraft({ ...profileDraft, [key]: e.target.value })} placeholder={`Enter ${label}`} type={type} /> : <b>{key === 'targetDate' && data.profile[key] ? formatDate(data.profile[key]) : data.profile[key] || '-'}</b>}</label>)}</div></div><div className="card actions"><h3>Account Actions</h3><button className="primary" onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit Profile</button>{editingProfile && <button onClick={saveProfile}><Save size={16}/> Save Changes</button>}<button className="danger" onClick={signOut}><LogOut size={16}/> Sign out</button><button onClick={resetLocalData}><RotateCcw size={16}/> Reset this browser data</button><div className="safeBox">🔒 Data is currently saved in this browser. Cloud sync can be added later.</div></div></div></section>;
 }
 
 export default function App() {

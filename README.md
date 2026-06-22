@@ -1,8 +1,3 @@
-# JEE Blueprint V14 - Interactive Topic Planner
+# JEE Blueprint V15 Focus Timer + Profile Target
 
-- Removed chapter subtitle and lecture labels from topic tracker.
-- Completed topic activity is added only when a topic is ticked.
-- When a topic is unchecked, its completed activity is removed automatically.
-- Added interactive dashboard filters: All, Pending, Completed, Flagged.
-- Subject progress bars are clickable filters.
-- Dropper keeps 11th + 12th planner topics.
+Adds real start/stop/resume/reset study timer, removes dashboard exam target card, and moves target editing into Profile.
