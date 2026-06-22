@@ -325,7 +325,7 @@ function DoubtSection({ doubts, setDoubts }) {
 }
 
 // ─── Main App ────────────────────────────────────────────────────
-export default function JeeBlueprint() {
+function JeeBlueprintDashboard() {
   const [data, setData] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [expanded, setExpanded] = useState("physics");
@@ -720,3 +720,165 @@ const CSS = `
 .btn-ghost { background:#fff; color:var(--ink-soft); }
 .btn-danger { background:#D9483A; color:#fff; border-color:#D9483A; }
 `;
+
+
+const PLATFORM_TABS = [
+  { id: "dashboard", label: "Dashboard" },
+  { id: "pyq", label: "PYQ" },
+  { id: "material", label: "Study Material" },
+  { id: "tests", label: "Tests" },
+  { id: "ai", label: "AI Tutor" },
+  { id: "profile", label: "Profile" },
+];
+
+const MATERIALS = [
+  { title: "Physics Formula Sheet", tag: "Coming soon", detail: "Mechanics, Electrostatics, Optics, Modern Physics quick revision." },
+  { title: "Chemistry Short Notes", tag: "Coming soon", detail: "Physical formulas, Organic named reactions, Inorganic NCERT points." },
+  { title: "Maths Formula Bank", tag: "Coming soon", detail: "Calculus, Coordinate Geometry, Algebra, Vectors and 3D." },
+  { title: "High Weightage Checklist", tag: "Free", detail: "Priority chapters for faster revision and daily planning." },
+];
+
+const PYQ_SETS = [
+  { subject: "Physics", chapter: "Current Electricity", count: 25, level: "Medium" },
+  { subject: "Chemistry", chapter: "Chemical Bonding", count: 30, level: "High" },
+  { subject: "Maths", chapter: "Matrices & Determinants", count: 22, level: "Medium" },
+  { subject: "Maths", chapter: "Integration", count: 35, level: "High" },
+];
+
+function PlatformPage({ title, subtitle, children }) {
+  return (
+    <div style={{ maxWidth: 980, margin: "0 auto", padding: "20px 14px 28px", fontFamily: "Inter, sans-serif", color: "#14233B" }}>
+      <div style={{ background: "linear-gradient(135deg,#E7EEFD,#EAF1F6)", border: "1px solid #D7E3EC", borderRadius: 18, padding: 18, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, letterSpacing: ".14em", fontWeight: 800, color: "#2F6FED", fontFamily: "IBM Plex Mono, monospace" }}>JEE BLUEPRINT</div>
+        <h1 style={{ margin: "6px 0 4px", fontFamily: "Space Grotesk, sans-serif", fontSize: 28 }}>{title}</h1>
+        <p style={{ margin: 0, color: "#5B6B82", lineHeight: 1.5 }}>{subtitle}</p>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function CardGrid({ children }) {
+  return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>{children}</div>;
+}
+
+function SimpleCard({ title, meta, children }) {
+  return (
+    <div style={{ background: "white", border: "1px solid #D7E3EC", borderRadius: 14, padding: 16, boxShadow: "0 3px 12px rgba(20,35,59,0.06)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+        <h3 style={{ margin: 0, fontSize: 16, fontFamily: "Space Grotesk, sans-serif" }}>{title}</h3>
+        {meta && <span style={{ fontSize: 10, fontFamily: "IBM Plex Mono, monospace", color: "#2F6FED", background: "#E7EEFD", borderRadius: 999, padding: "4px 8px", whiteSpace: "nowrap" }}>{meta}</span>}
+      </div>
+      <div style={{ marginTop: 10, fontSize: 13, color: "#5B6B82", lineHeight: 1.55 }}>{children}</div>
+    </div>
+  );
+}
+
+function PyqPage() {
+  return (
+    <PlatformPage title="PYQ Practice" subtitle="Chapter-wise JEE Main + Advanced PYQ section. Start with limited free sets, then make full solutions Pro.">
+      <CardGrid>
+        {PYQ_SETS.map((p) => (
+          <SimpleCard key={p.subject + p.chapter} title={p.chapter} meta={p.subject}>
+            <div>{p.count} questions planned</div>
+            <div>Difficulty: {p.level}</div>
+            <button style={{ marginTop: 12, width: "100%", border: "none", background: "#2F6FED", color: "white", borderRadius: 10, padding: "10px 12px", fontWeight: 700, cursor: "pointer" }}>
+              Open set
+            </button>
+          </SimpleCard>
+        ))}
+      </CardGrid>
+    </PlatformPage>
+  );
+}
+
+function MaterialPage() {
+  return (
+    <PlatformPage title="Study Material" subtitle="Add your own notes, formula sheets, revision checklists and chapter resources here.">
+      <CardGrid>
+        {MATERIALS.map((m) => (
+          <SimpleCard key={m.title} title={m.title} meta={m.tag}>{m.detail}</SimpleCard>
+        ))}
+      </CardGrid>
+      <div style={{ marginTop: 14, background: "#FFF8E1", border: "1px dashed #E0BD63", borderRadius: 12, padding: 14, color: "#7A5B12", fontSize: 13 }}>
+        Note: copyrighted coaching PDFs/books upload करू नकोस. स्वतःचे notes, official/public papers किंवा permission असलेले material वापर.
+      </div>
+    </PlatformPage>
+  );
+}
+
+function TestsPage() {
+  return (
+    <PlatformPage title="Tests" subtitle="Mock tests and chapter tests will come here. First version can store marks manually.">
+      <CardGrid>
+        <SimpleCard title="Chapter Test" meta="Free">10-question quick tests for one chapter. Score tracking coming next.</SimpleCard>
+        <SimpleCard title="Full Mock" meta="Pro idea">JEE Main style timed mock test with performance analysis.</SimpleCard>
+        <SimpleCard title="Weak Topic Test" meta="AI idea">Generate tests from chapters marked as revise.</SimpleCard>
+      </CardGrid>
+    </PlatformPage>
+  );
+}
+
+function AiPage() {
+  return (
+    <PlatformPage title="AI Tutor" subtitle="AI doubt solver will be connected later through secure backend. API key frontend मध्ये ठेवायची नाही.">
+      <SimpleCard title="AI Coming Soon" meta="Secure backend needed">
+        Next step: AWS Function/Lambda किंवा Bedrock/Claude backend. Free users: 5 doubts/day. Pro users: higher limit.
+      </SimpleCard>
+    </PlatformPage>
+  );
+}
+
+function ProfilePage() {
+  return (
+    <PlatformPage title="Profile" subtitle="Student profile, target exam and plan details.">
+      <CardGrid>
+        <SimpleCard title="Student Plan" meta="Free">Current plan: Free. Pro plan can unlock full PYQ, solutions and AI planner.</SimpleCard>
+        <SimpleCard title="Target" meta="JEE">Target exam date is currently set inside Dashboard.</SimpleCard>
+        <SimpleCard title="Progress Sync" meta="Next step">Right now progress is browser localStorage. Later we can save per-user data in cloud database.</SimpleCard>
+      </CardGrid>
+    </PlatformPage>
+  );
+}
+
+export default function JeeBlueprint() {
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const renderTab = () => {
+    if (activeTab === "dashboard") return <JeeBlueprintDashboard />;
+    if (activeTab === "pyq") return <PyqPage />;
+    if (activeTab === "material") return <MaterialPage />;
+    if (activeTab === "tests") return <TestsPage />;
+    if (activeTab === "ai") return <AiPage />;
+    if (activeTab === "profile") return <ProfilePage />;
+    return <JeeBlueprintDashboard />;
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#EAF1F6" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(234,241,246,0.94)", backdropFilter: "blur(10px)", borderBottom: "1px solid #D7E3EC" }}>
+        <div style={{ maxWidth: 980, margin: "0 auto", padding: "10px 14px", display: "flex", gap: 8, overflowX: "auto" }}>
+          {PLATFORM_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                border: "1px solid #D7E3EC",
+                background: activeTab === tab.id ? "#2F6FED" : "white",
+                color: activeTab === tab.id ? "white" : "#14233B",
+                borderRadius: 999,
+                padding: "8px 12px",
+                fontSize: 12,
+                fontWeight: 800,
+                whiteSpace: "nowrap",
+                cursor: "pointer"
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {renderTab()}
+    </div>
+  );
+}
