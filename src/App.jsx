@@ -94,7 +94,7 @@ const defaultData = (email = '') => ({
 
 function makeStorageKey(user) {
   const email = user?.signInDetails?.loginId || user?.attributes?.email || user?.username || 'student';
-  return `jee-blueprint-v12-topic-planner-${email}`;
+  return `jee-blueprint-v13-topic-planner-${email}`;
 }
 
 function loadData(key, email) {
@@ -130,15 +130,15 @@ function flattenChapters(planner) {
 function localStudyFallback(question) {
   const q = question.toLowerCase();
   if (q.includes('plan') || q.includes('revision') || q.includes('strategy')) {
-    return `AI quota is not active, so this is a free local study-helper answer.\n\n7-day revision method:\n1) Day 1-2: Revise theory and formulas from notes.\n2) Day 3-4: Solve previous year questions.\n3) Day 5: Solve weak questions again.\n4) Day 6: Take a chapter test.\n5) Day 7: Revise your mistakes notebook.\n\nRule: concept first, then PYQs, then test analysis.`;
+    return `7-day revision method:\n1) Day 1-2: Revise theory and formulas from notes.\n2) Day 3-4: Solve previous year questions.\n3) Day 5: Solve weak questions again.\n4) Day 6: Take a chapter test.\n5) Day 7: Revise your mistakes notebook.\n\nRule: concept first, then PYQs, then test analysis.`;
   }
   if (q.includes('integration')) {
-    return `AI quota is not active, so this is a free local study-helper answer.\n\nSequence for Integration:\n1) Memorize standard formulas perfectly.\n2) Practice substitution, integration by parts, and partial fractions separately.\n3) Solve 15 definite integration property questions daily.\n4) While solving PYQs, identify the method used in each question.`;
+    return `Sequence for Integration:\n1) Memorize standard formulas perfectly.\n2) Practice substitution, integration by parts, and partial fractions separately.\n3) Solve 15 definite integration property questions daily.\n4) While solving PYQs, identify the method used in each question.`;
   }
   if (q.includes('chemical bonding') || q.includes('bonding')) {
-    return `AI quota is not active, so this is a free local study-helper answer.\n\nChemical Bonding priority:\n1) VSEPR shapes\n2) Hybridisation\n3) MOT basics\n4) Bond order and magnetic nature\n5) Dipole moment`;
+    return `Chemical Bonding priority:\n1) VSEPR shapes\n2) Hybridisation\n3) MOT basics\n4) Bond order and magnetic nature\n5) Dipole moment`;
   }
-  return `AI quota is not active, so this is a free local study-helper answer.\n\nYour doubt: ${question}\n\nBest approach:\n1) Identify the chapter name.\n2) Revise formula/theory for 10 minutes.\n3) Review 5 solved examples.\n4) Solve 15 PYQs.\n5) Write the exact step where you got stuck and ask again.`;
+  return `Your doubt: ${question}\n\nBest approach:\n1) Identify the chapter name.\n2) Revise formula/theory for 10 minutes.\n3) Review 5 solved examples.\n4) Solve 15 PYQs.\n5) Write the exact step where you got stuck and ask again.`;
 }
 
 function AppShell({ user, signOut }) {
@@ -315,7 +315,7 @@ function AppShell({ user, signOut }) {
             })}
           </div>
         ))}
-        <div className="aiHelp"><Bot size={42} /><strong>Chat. Learn. Improve.</strong><span>Real AI works if Gemini quota is available; otherwise a free fallback answer is shown.</span><button onClick={() => setActive('ai')}>Open AI Tutor</button></div>
+        <div className="aiHelp"><Bot size={42} /><strong>Chat. Learn. Improve.</strong><span>Ask doubts and get study help.</span><button onClick={() => setActive('ai')}>Open AI Tutor</button></div>
       </aside>
 
       <main className="main">
@@ -352,7 +352,7 @@ function Dashboard({ data, planner, progressValue, doneCount, totalTopics, total
         <div className="heroLeft">
           <span className="blueLabel">Your Learning Overview</span>
           <h2>{doneCount === 0 ? 'Start building momentum!' : 'Keep building momentum!'}</h2>
-          <p>Today: <b>{formatDate(new Date())}</b> — this date updates automatically using your browser time.</p>
+          <p>Today: <b>{formatDate(new Date())}</b></p>
           <div className="statPills">
             <div><CalendarDays size={20} /><b>{data.profile.targetExam || 'Target exam not set'}</b><span>{data.profile.targetDate ? `${formatDate(data.profile.targetDate)}${left !== null ? ` • ${left >= 0 ? `${left} days left` : `${Math.abs(left)} days passed`}` : ''}` : 'Set the date in Profile'}</span></div>
             <div><Target size={20} /><b>{flaggedCount} flagged</b><span>Priority topics</span></div>
@@ -439,13 +439,13 @@ function AiPage({ data, localStudyFallback }) {
       else { setAnswer(aiText || localStudyFallback(text)); }
     } catch (err) {
       setAnswer(localStudyFallback(text));
-      setError('There may be a Gemini API quota/connection issue, so a local fallback answer is shown.');
+      setError('Could not connect to AI right now. Showing a study-helper answer.');
     } finally { setLoading(false); }
   }
 
   function example(text) { setQuestion(text); setAnswer(''); setError(''); }
 
-  return <section className="page"><div className="pageHead"><h1>AI Tutor</h1><p>If Gemini quota is available, you will get a real AI answer. If quota is 0, the app shows a free fallback answer instead of a raw error.</p></div><div className="card aiTutorPanel"><div className="aiTutorTop"><div className="aiAvatar"><Bot size={30} /></div><div><h2>Ask JEE Blueprint AI</h2><p>Ask Physics, Chemistry, Maths doubts, study plans, and revision strategy.</p></div></div><div className="aiExamples"><button onClick={() => example('Explain Kirchhoff laws with one JEE level example')}>Explain Kirchhoff laws</button><button onClick={() => example('Give me a 7 day revision plan for Chemical Bonding')}>7 day revision plan</button><button onClick={() => example('How should I revise Integration for JEE Advanced?')}>Integration strategy</button></div><textarea className="aiInput" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Type your doubt in English, Hindi or Marathi..." rows={5} /><div className="aiActionRow"><button className="primary" onClick={askTutor} disabled={loading}>{loading ? 'AI thinking...' : 'Ask AI Tutor'} <Send size={17} /></button><small>Note: Free API quota depends on your Google project.</small></div>{error && <div className="aiError">{error}</div>}{answer && <div className="aiAnswer"><h3>Answer</h3><pre>{answer}</pre></div>}</div></section>;
+  return <section className="page"><div className="pageHead"><h1>AI Tutor</h1></div><div className="card aiTutorPanel"><div className="aiTutorTop"><div className="aiAvatar"><Bot size={30} /></div><div><h2>Ask JEE Blueprint AI</h2><p>Ask Physics, Chemistry, Maths doubts, study plans, and revision strategy.</p></div></div><div className="aiExamples"><button onClick={() => example('Explain Kirchhoff laws with one JEE level example')}>Explain Kirchhoff laws</button><button onClick={() => example('Give me a 7 day revision plan for Chemical Bonding')}>7 day revision plan</button><button onClick={() => example('How should I revise Integration for JEE Advanced?')}>Integration strategy</button></div><textarea className="aiInput" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Type your doubt in English, Hindi or Marathi..." rows={5} /><div className="aiActionRow"><button className="primary" onClick={askTutor} disabled={loading}>{loading ? 'AI thinking...' : 'Ask AI Tutor'} <Send size={17} /></button></div>{error && <div className="aiError">{error}</div>}{answer && <div className="aiAnswer"><h3>Answer</h3><pre>{answer}</pre></div>}</div></section>;
 }
 
 function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setEditingProfile, saveProfile, signOut, resetLocalData }) {
