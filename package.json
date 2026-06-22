@@ -1,7 +1,7 @@
 {
   "name": "jee-blueprint",
   "private": true,
-  "version": "0.8.0",
+  "version": "0.8.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,18 +9,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@aws-amplify/ui-react": "^6.9.1",
-    "@aws-amplify/backend": "^1.15.1",
+    "@aws-amplify/ui-react": "^6.11.2",
     "aws-amplify": "^6.15.7",
-    "aws-cdk-lib": "^2.190.0",
-    "constructs": "^10.4.2",
-    "lucide-react": "^0.475.0",
+    "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@aws-amplify/backend": "^1.16.1",
+    "@aws-amplify/backend-cli": "^1.7.0",
+    "aws-cdk-lib": "^2.189.1",
+    "constructs": "^10.4.2",
     "@vitejs/plugin-react": "^4.3.4",
-    "typescript": "^5.7.3",
+    "typescript": "^5.6.3",
     "vite": "^5.4.11"
   }
 }
