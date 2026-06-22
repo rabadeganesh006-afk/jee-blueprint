@@ -11,7 +11,7 @@ import { PLANNER } from './plannerData';
 import './style.css';
 
 const uiTheme = createTheme({
-  name: 'jee-blueprint-theme',
+  name: 'study-blueprint-theme',
   tokens: {
     colors: { brand: { primary: { 10: '#eef6ff', 80: '#2563eb', 90: '#1d4ed8', 100: '#1e40af' } } },
     radii: { medium: { value: '14px' }, large: { value: '22px' } },
@@ -132,7 +132,7 @@ const defaultData = (email = '') => ({
 
 function makeStorageKey(user) {
   const email = user?.signInDetails?.loginId || user?.attributes?.email || user?.username || 'student';
-  return `jee-blueprint-v16-polished-dashboard-timer-${email}`;
+  return `study-blueprint-v17-branding-${email}`;
 }
 
 function loadData(key, email) {
@@ -423,7 +423,7 @@ function AppShell({ user, signOut }) {
   return (
     <div className={`app ${data.theme === 'dark' ? 'dark' : 'light'}`}>
       <aside className="sidebar">
-        <div className="brand"><img src="/logo.png" alt="JEE Blueprint" /></div>
+        <div className="brand"><img src="/study-blueprint-logo.svg" alt="Study Blueprint" /></div>
         {['LEARN', 'ASSESS', 'AI LEARNING', 'ACCOUNT'].map((group) => (
           <div className="navGroup" key={group}>
             <p>{group}</p>
@@ -629,7 +629,7 @@ function AiPage({ data, localStudyFallback }) {
 
   function example(text) { setQuestion(text); setAnswer(''); setError(''); }
 
-  return <section className="page"><div className="pageHead"><h1>AI Tutor</h1></div><div className="card aiTutorPanel"><div className="aiTutorTop"><div className="aiAvatar"><Bot size={30} /></div><div><h2>Ask JEE Blueprint AI</h2><p>Ask Physics, Chemistry, Maths doubts, study plans, and revision strategy.</p></div></div><div className="aiExamples"><button onClick={() => example('Explain Kirchhoff laws with one JEE level example')}>Explain Kirchhoff laws</button><button onClick={() => example('Give me a 7 day revision plan for Chemical Bonding')}>7 day revision plan</button><button onClick={() => example('How should I revise Integration for JEE Advanced?')}>Integration strategy</button></div><textarea className="aiInput" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Type your doubt in English, Hindi or Marathi..." rows={5} /><div className="aiActionRow"><button className="primary" onClick={askTutor} disabled={loading}>{loading ? 'AI thinking...' : 'Ask AI Tutor'} <Send size={17} /></button></div>{error && <div className="aiError">{error}</div>}{answer && <div className="aiAnswer"><h3>Answer</h3><pre>{answer}</pre></div>}</div></section>;
+  return <section className="page"><div className="pageHead"><h1>AI Tutor</h1></div><div className="card aiTutorPanel"><div className="aiTutorTop"><div className="aiAvatar"><Bot size={30} /></div><div><h2>Ask Study Blueprint AI</h2><p>Ask Physics, Chemistry, Maths doubts, study plans, and revision strategy.</p></div></div><div className="aiExamples"><button onClick={() => example('Explain Kirchhoff laws with one JEE level example')}>Explain Kirchhoff laws</button><button onClick={() => example('Give me a 7 day revision plan for Chemical Bonding')}>7 day revision plan</button><button onClick={() => example('How should I revise Integration for JEE Advanced?')}>Integration strategy</button></div><textarea className="aiInput" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Type your doubt in English, Hindi or Marathi..." rows={5} /><div className="aiActionRow"><button className="primary" onClick={askTutor} disabled={loading}>{loading ? 'AI thinking...' : 'Ask AI Tutor'} <Send size={17} /></button></div>{error && <div className="aiError">{error}</div>}{answer && <div className="aiAnswer"><h3>Answer</h3><pre>{answer}</pre></div>}</div></section>;
 }
 
 function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setEditingProfile, saveProfile, signOut, resetLocalData }) {

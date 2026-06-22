@@ -1,0 +1,36 @@
+<svg width="820" height="210" viewBox="0 0 820 210" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Study Blueprint logo">
+  <defs>
+    <linearGradient id="g1" x1="24" y1="180" x2="176" y2="32" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1D4ED8"/>
+      <stop offset="0.55" stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#38BDF8"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="48" y1="150" x2="170" y2="78" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#67E8F9"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="220" height="220" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#2563EB" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="26" y="30" width="156" height="156" rx="30" fill="url(#g1)"/>
+    <path d="M55 64H153" stroke="#BFDBFE" stroke-width="2" stroke-dasharray="8 8" opacity="0.75"/>
+    <path d="M55 100H153" stroke="#BFDBFE" stroke-width="2" stroke-dasharray="8 8" opacity="0.55"/>
+    <path d="M55 136H153" stroke="#BFDBFE" stroke-width="2" stroke-dasharray="8 8" opacity="0.55"/>
+    <path d="M72 52V165" stroke="#BFDBFE" stroke-width="2" stroke-dasharray="8 8" opacity="0.55"/>
+    <path d="M118 52V165" stroke="#BFDBFE" stroke-width="2" stroke-dasharray="8 8" opacity="0.55"/>
+    <rect x="66" y="125" width="25" height="38" rx="6" fill="white" fill-opacity="0.92"/>
+    <rect x="100" y="105" width="25" height="58" rx="6" fill="white" fill-opacity="0.94"/>
+    <rect x="134" y="82" width="25" height="81" rx="6" fill="white" fill-opacity="0.96"/>
+    <path d="M45 135C76 130 111 104 140 75" stroke="url(#g2)" stroke-width="11" stroke-linecap="round"/>
+    <path d="M136 75C150 45 176 31 186 27C185 48 176 74 151 91L136 75Z" fill="#F8FAFC"/>
+    <circle cx="170" cy="48" r="9" fill="#0F172A"/>
+    <path d="M144 88L126 99L136 75" fill="#E0F2FE"/>
+    <path d="M151 91L143 114L164 96" fill="#DBEAFE"/>
+    <path d="M144 74L128 74" stroke="#F8FAFC" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <text x="230" y="97" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="58" font-weight="800" letter-spacing="-2.5" fill="#0F172A">Study</text>
+  <text x="410" y="97" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="58" font-weight="800" letter-spacing="-2.5" fill="#2563EB">Blueprint</text>
+  <text x="234" y="138" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="18" font-weight="700" letter-spacing="4" fill="#64748B">PLAN • TRACK • IMPROVE</text>
+</svg>

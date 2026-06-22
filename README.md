@@ -1,3 +1,3 @@
-# JEE Blueprint V16 Polished Dashboard Timer
+# Study Blueprint V17 Branding
 
-Polished dashboard alignment, subject-colored progress ring, improved study timer, and useful next-topic checklist card.
+Study Blueprint rebrand with clean SVG logo, favicon, and updated AI title.
