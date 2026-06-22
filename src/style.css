@@ -484,3 +484,38 @@ summary span { color: var(--muted); font-size: 12px; }
   .activity.removable { grid-template-columns: 18px minmax(0,1fr) 26px; }
   .activity.removable small { grid-column: 2 / 3; max-width: none; text-align: left; }
 }
+
+/* V14: cleaner topic rows + interactive dashboard overview */
+.interactivePills button {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+  display: grid;
+  gap: 5px;
+  text-align: left;
+  cursor: pointer;
+}
+.interactivePills button:hover, .subjectBar:hover, .filterChips button:hover {
+  border-color: rgba(37,99,235,.45);
+  box-shadow: 0 10px 26px rgba(37,99,235,.08);
+}
+.interactivePills b, .interactivePills span { overflow-wrap: anywhere; }
+.interactivePills span { color: var(--muted); font-size: 12px; }
+.filterChips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.filterChips button { border: 1px solid var(--border); background: var(--soft); color: var(--muted); padding: 7px 11px; border-radius: 999px; font-weight: 850; cursor: pointer; }
+.filterChips button.active { background: rgba(37,99,235,.14); color: var(--blue); border-color: rgba(37,99,235,.35); }
+.subjectBars .subjectBar { width: 100%; border: 0; background: transparent; color: var(--text); display: grid; grid-template-columns: 98px minmax(80px, 1fr) 54px; gap: 10px; align-items: center; text-align: left; border-radius: 12px; padding: 6px; cursor: pointer; }
+.subjectBars .subjectBar.active { background: rgba(37,99,235,.10); }
+.subjectBars .subjectBar .bar { display: block; grid-column: auto; margin: 0; }
+.subjectBars .subjectBar small { grid-column: 1 / -1; color: var(--muted); margin-top: -8px; }
+.chapterPanel > summary small, .topicRow small { display: none !important; }
+.topicRow.done b { color: var(--blue); text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: rgba(37,99,235,.45); }
+.topicRow.done { background: rgba(37,99,235,.035); }
+@media (max-width: 620px) {
+  .subjectBars .subjectBar { grid-template-columns: 86px minmax(60px,1fr) 45px; font-size: 12px; }
+  .filterChips { gap: 6px; }
+  .filterChips button { padding: 7px 9px; font-size: 12px; }
+}

@@ -94,7 +94,7 @@ const defaultData = (email = '') => ({
 
 function makeStorageKey(user) {
   const email = user?.signInDetails?.loginId || user?.attributes?.email || user?.username || 'student';
-  return `jee-blueprint-v13-topic-planner-${email}`;
+  return `jee-blueprint-v14-interactive-topic-planner-${email}`;
 }
 
 function loadData(key, email) {
@@ -160,8 +160,10 @@ function AppShell({ user, signOut }) {
     });
   }
 
-  function pushActivity(current, text) {
-    return [{ text, date: new Date().toLocaleString(), id: `${Date.now()}-${Math.random().toString(16).slice(2)}` }, ...(current.activities || [])].slice(0, 30);
+  function pushActivity(current, text, fixedId = null) {
+    const id = fixedId || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const old = (current.activities || []).filter((activity) => activity.id !== id && !activity.text?.startsWith('Unchecked topic:'));
+    return [{ text, date: new Date().toLocaleString(), id }, ...old].slice(0, 30);
   }
 
   const planner = useMemo(() => getPlannerForStream(data.stream), [data.stream]);
@@ -218,12 +220,19 @@ function AppShell({ user, signOut }) {
   }
 
   function toggleTopic(topic, chapterTitle) {
-    const nextValue = !data.topicsDone?.[topic.id];
-    update((current) => ({
-      ...current,
-      topicsDone: { ...(current.topicsDone || {}), [topic.id]: nextValue },
-      activities: pushActivity(current, `${nextValue ? 'Completed' : 'Unchecked'} topic: ${topic.title} (${chapterTitle})`)
-    }));
+    const activityId = `topic-complete-${topic.id}`;
+    update((current) => {
+      const nextValue = !current.topicsDone?.[topic.id];
+      const topicsDone = { ...(current.topicsDone || {}), [topic.id]: nextValue };
+      const cleanActivities = (current.activities || []).filter((activity) => activity.id !== activityId && !activity.text?.startsWith('Unchecked topic:'));
+      return {
+        ...current,
+        topicsDone,
+        activities: nextValue
+          ? pushActivity({ ...current, activities: cleanActivities }, `Completed topic: ${topic.title} (${chapterTitle})`, activityId)
+          : cleanActivities
+      };
+    });
   }
 
   function toggleFlagTopic(topic) {
@@ -342,8 +351,11 @@ function Dashboard({ data, planner, progressValue, doneCount, totalTopics, total
   const pending = (data.tasks || []).filter((t) => !t.done);
   const flaggedCount = Object.values(data.topicsFlagged || {}).filter(Boolean).length;
   const [targetDraft, setTargetDraft] = useState({ targetExam: data.profile.targetExam || '', targetDate: data.profile.targetDate || '' });
+  const [subjectFilter, setSubjectFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
   const left = daysLeft(data.profile.targetDate);
   const q = query.trim().toLowerCase();
+  const visibleActivities = (data.activities || []).filter((activity) => !activity.text?.startsWith('Unchecked topic:'));
 
   return (
     <section className="page">
@@ -353,10 +365,13 @@ function Dashboard({ data, planner, progressValue, doneCount, totalTopics, total
           <span className="blueLabel">Your Learning Overview</span>
           <h2>{doneCount === 0 ? 'Start building momentum!' : 'Keep building momentum!'}</h2>
           <p>Today: <b>{formatDate(new Date())}</b></p>
-          <div className="statPills">
-            <div><CalendarDays size={20} /><b>{data.profile.targetExam || 'Target exam not set'}</b><span>{data.profile.targetDate ? `${formatDate(data.profile.targetDate)}${left !== null ? ` • ${left >= 0 ? `${left} days left` : `${Math.abs(left)} days passed`}` : ''}` : 'Set the date in Profile'}</span></div>
-            <div><Target size={20} /><b>{flaggedCount} flagged</b><span>Priority topics</span></div>
-            <div><Clock size={20} /><b>{minutesText(todayMinutes)} today</b><span>Study time</span></div>
+          <div className="statPills interactivePills">
+            <button onClick={() => setActive('profile')}><CalendarDays size={20} /><b>{data.profile.targetExam || 'Target exam not set'}</b><span>{data.profile.targetDate ? `${formatDate(data.profile.targetDate)}${left !== null ? ` • ${left >= 0 ? `${left} days left` : `${Math.abs(left)} days passed`}` : ''}` : 'Set the date in Profile'}</span></button>
+            <button onClick={() => setStatusFilter(statusFilter === 'Flagged' ? 'All' : 'Flagged')}><Target size={20} /><b>{flaggedCount} flagged</b><span>{statusFilter === 'Flagged' ? 'Showing flagged topics' : 'Show priority topics'}</span></button>
+            <button onClick={() => addStudyMinutes(15)}><Clock size={20} /><b>{minutesText(todayMinutes)} today</b><span>Tap to add +15m</span></button>
+          </div>
+          <div className="filterChips">
+            {['All', 'Pending', 'Completed', 'Flagged'].map((filter) => <button key={filter} className={statusFilter === filter ? 'active' : ''} onClick={() => setStatusFilter(filter)}>{filter}</button>)}
           </div>
         </div>
         <div className="progressBlock">
@@ -366,7 +381,7 @@ function Dashboard({ data, planner, progressValue, doneCount, totalTopics, total
               const topics = chapters.flatMap((chapter) => chapter.topics);
               const count = topics.filter((topic) => data.topicsDone?.[topic.id]).length;
               const pct = percentNumber(count, topics.length);
-              return <div key={subject}><b>{subject}</b><div className="bar"><span style={{ width: `${pct}%` }} /></div><strong>{percentText(pct)}</strong><small>{count} / {topics.length} topics</small></div>;
+              return <button key={subject} className={subjectFilter === subject ? 'subjectBar active' : 'subjectBar'} onClick={() => setSubjectFilter(subjectFilter === subject ? 'All' : subject)}><b>{subject}</b><div className="bar"><span style={{ width: `${pct}%` }} /></div><strong>{percentText(pct)}</strong><small>{count} / {topics.length} topics</small></button>;
             })}
           </div>
         </div>
@@ -380,18 +395,26 @@ function Dashboard({ data, planner, progressValue, doneCount, totalTopics, total
 
       <div className="grid2 syllabusGrid">
         <div className="card syllabusCard"><h3>Planner Topic Tracker</h3><p className="muted">Click a chapter to open its planner topics. Tick each topic after you complete it.</p>{Object.entries(planner).map(([subject, chapters]) => {
-          const filteredChapters = q ? chapters.map((chapter) => ({ ...chapter, topics: chapter.topics.filter((topic) => `${subject} ${chapter.title} ${chapter.subSubject} ${topic.title}`.toLowerCase().includes(q)) })).filter((chapter) => chapter.topics.length || `${subject} ${chapter.title} ${chapter.subSubject}`.toLowerCase().includes(q)) : chapters;
-          if (q && filteredChapters.length === 0) return null;
+          if (subjectFilter !== 'All' && subjectFilter !== subject) return null;
+          const filterTopics = (chapter) => chapter.topics.filter((topic) => {
+            const matchesSearch = !q || `${subject} ${chapter.title} ${chapter.subSubject} ${topic.title}`.toLowerCase().includes(q);
+            const isDone = !!data.topicsDone?.[topic.id];
+            const isFlagged = !!data.topicsFlagged?.[topic.id];
+            const matchesStatus = statusFilter === 'All' || (statusFilter === 'Pending' && !isDone) || (statusFilter === 'Completed' && isDone) || (statusFilter === 'Flagged' && isFlagged);
+            return matchesSearch && matchesStatus;
+          });
+          const filteredChapters = chapters.map((chapter) => ({ ...chapter, topics: filterTopics(chapter) })).filter((chapter) => chapter.topics.length || (!q && statusFilter === 'All'));
+          if (filteredChapters.length === 0) return null;
           const subjectTopics = chapters.flatMap((chapter) => chapter.topics);
           const subjectDone = subjectTopics.filter((topic) => data.topicsDone?.[topic.id]).length;
-          return <details key={subject} open={q ? true : subject === 'Physics'} className="subjectPanel"><summary>{subject} <span>{subjectDone}/{subjectTopics.length} topics • {percentText(percentNumber(subjectDone, subjectTopics.length))}</span></summary><div className="chapterPanels">{filteredChapters.map((chapter) => {
+          return <details key={subject} open={q || subjectFilter !== 'All' ? true : subject === 'Physics'} className="subjectPanel"><summary>{subject} <span>{subjectDone}/{subjectTopics.length} topics • {percentText(percentNumber(subjectDone, subjectTopics.length))}</span></summary><div className="chapterPanels">{filteredChapters.map((chapter) => {
             const topics = chapter.topics;
             const done = topics.filter((topic) => data.topicsDone?.[topic.id]).length;
             const pct = percentNumber(done, topics.length);
-            return <details key={chapter.id} className="chapterPanel"><summary><div><b>{chapter.title}</b><small>{chapter.subSubject !== subject ? chapter.subSubject : 'Planner chapter'}</small></div><span>{done}/{topics.length} • {percentText(pct)}</span></summary><div className="topicList">{topics.map((topic) => <div className="topicRow" key={topic.id}><button className="topicCheck" onClick={() => toggleTopic(topic, chapter.title)}>{data.topicsDone?.[topic.id] ? <CheckCircle2 size={18} /> : <Circle size={18} />}</button><div><b>{topic.title}</b><small>Lecture {topic.lecture}</small></div><button title="Flag topic" onClick={() => toggleFlagTopic(topic)} className={data.topicsFlagged?.[topic.id] ? 'flagged topicStar' : 'topicStar'}><Star size={15}/></button></div>)}</div></details>;
+            return <details key={chapter.id} className="chapterPanel"><summary><div><b>{chapter.title}</b></div><span>{done}/{topics.length} • {percentText(pct)}</span></summary><div className="topicList">{topics.map((topic) => <div className={data.topicsDone?.[topic.id] ? 'topicRow done' : 'topicRow'} key={topic.id}><button className="topicCheck" onClick={() => toggleTopic(topic, chapter.title)}>{data.topicsDone?.[topic.id] ? <CheckCircle2 size={18} /> : <Circle size={18} />}</button><div><b>{topic.title}</b></div><button title="Flag topic" onClick={() => toggleFlagTopic(topic)} className={data.topicsFlagged?.[topic.id] ? 'flagged topicStar' : 'topicStar'}><Star size={15}/></button></div>)}</div></details>;
           })}</div></details>;
         })}</div>
-        <div className="card"><h3>Pending Tasks</h3><div className="inlineForm"><input value={newTask} onChange={(e) => setNewTask(e.target.value)} placeholder="Add real task..." /><button onClick={addTask}><Plus size={17} /></button></div>{pending.length === 0 ? <p className="empty">No pending tasks yet.</p> : pending.slice(0, 8).map((task) => <div className="task" key={task.id}><button onClick={() => toggleTask(task.id)}><Circle size={17} /></button><span>{task.title}</span><small>{formatDate(task.date)}</small><button onClick={() => deleteTask(task.id)}><Trash2 size={15} /></button></div>)}<h3 className="mt">Quick Actions</h3><div className="quickActions"><button onClick={() => setActive('pyq')}><Pi /> <b>PYQ Practice</b><span>Practice past questions</span></button><button onClick={() => setActive('tests')}><CheckCircle2 /> <b>Test Series</b><span>Add manual scores</span></button><button onClick={() => setActive('ai')}><Bot /> <b>AI Tutor</b><span>Real AI / fallback</span></button><button onClick={() => setActive('material')}><BookOpen /> <b>Study Material</b><span>Mark notes as read</span></button></div><div className="between mt"><h3>Recent Activity</h3>{(data.activities || []).length > 0 && <button className="smallDanger" onClick={clearActivities}>Clear all</button>}</div>{(data.activities || []).length === 0 ? <p className="empty">No activity yet. Start marking topics, PYQs or study time.</p> : data.activities.slice(0, 8).map((a) => <div className="activity removable" key={a.id}><CheckCircle2 size={16}/><span>{a.text}</span><small>{a.date}</small><button onClick={() => deleteActivity(a.id)}><X size={15}/></button></div>)}</div>
+        <div className="card"><h3>Pending Tasks</h3><div className="inlineForm"><input value={newTask} onChange={(e) => setNewTask(e.target.value)} placeholder="Add real task..." /><button onClick={addTask}><Plus size={17} /></button></div>{pending.length === 0 ? <p className="empty">No pending tasks yet.</p> : pending.slice(0, 8).map((task) => <div className="task" key={task.id}><button onClick={() => toggleTask(task.id)}><Circle size={17} /></button><span>{task.title}</span><small>{formatDate(task.date)}</small><button onClick={() => deleteTask(task.id)}><Trash2 size={15} /></button></div>)}<h3 className="mt">Quick Actions</h3><div className="quickActions"><button onClick={() => setActive('pyq')}><Pi /> <b>PYQ Practice</b><span>Practice past questions</span></button><button onClick={() => setActive('tests')}><CheckCircle2 /> <b>Test Series</b><span>Add manual scores</span></button><button onClick={() => setActive('ai')}><Bot /> <b>AI Tutor</b><span>Real AI / fallback</span></button><button onClick={() => setActive('material')}><BookOpen /> <b>Study Material</b><span>Mark notes as read</span></button></div><div className="between mt"><h3>Recent Activity</h3>{visibleActivities.length > 0 && <button className="smallDanger" onClick={clearActivities}>Clear all</button>}</div>{visibleActivities.length === 0 ? <p className="empty">No activity yet. Start marking topics, PYQs or study time.</p> : visibleActivities.slice(0, 8).map((a) => <div className="activity removable" key={a.id}><CheckCircle2 size={16}/><span>{a.text}</span><small>{a.date}</small><button onClick={() => deleteActivity(a.id)}><X size={15}/></button></div>)}</div>
       </div>
     </section>
   );
