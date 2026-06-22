@@ -454,3 +454,33 @@ summary span { color: var(--muted); font-size: 12px; }
     font-size: 42px;
   }
 }
+
+
+/* V12: topic-level planner tracker */
+.syllabusCard { max-height: 760px; overflow: auto; }
+.subjectPanel { border-top: 1px solid var(--border); padding: 11px 0; }
+.subjectPanel > summary { font-size: 16px; }
+.chapterPanels { display: grid; gap: 10px; margin-top: 10px; }
+.chapterPanel { border: 1px solid var(--border); border-radius: 15px; padding: 0; background: var(--soft); overflow: hidden; }
+.chapterPanel > summary { padding: 13px 14px; align-items: center; }
+.chapterPanel > summary div { display: grid; gap: 3px; min-width: 0; }
+.chapterPanel > summary b { overflow-wrap: anywhere; }
+.chapterPanel > summary small { color: var(--muted); font-weight: 700; }
+.topicList { display: grid; padding: 0 14px 12px; }
+.topicRow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 30px; gap: 10px; align-items: start; border-top: 1px solid var(--border); padding: 11px 0; }
+.topicRow .topicCheck, .topicStar { border: none; background: transparent; color: var(--muted); padding: 2px; display: grid; place-items: center; }
+.topicRow .topicCheck { color: var(--blue); }
+.topicRow b { font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
+.topicRow small { display: block; color: var(--muted); margin-top: 4px; font-size: 11px; }
+.topicStar.flagged { color: #f59e0b !important; }
+.smallDanger { border: 1px solid rgba(239,68,68,.35); background: rgba(239,68,68,.08); color: #dc2626; border-radius: 10px; padding: 7px 10px; font-weight: 850; }
+.activity.removable { display: grid; grid-template-columns: 20px minmax(0,1fr) auto 30px; }
+.activity.removable button { border: none; background: transparent; color: var(--muted); display: grid; place-items: center; }
+@media (max-width: 820px) {
+  .syllabusCard { max-height: none; overflow: visible; }
+  .chapterPanel > summary { padding: 12px; }
+  .topicList { padding: 0 12px 10px; }
+  .topicRow { grid-template-columns: 26px minmax(0,1fr) 28px; gap: 8px; }
+  .activity.removable { grid-template-columns: 18px minmax(0,1fr) 26px; }
+  .activity.removable small { grid-column: 2 / 3; max-width: none; text-align: left; }
+}
