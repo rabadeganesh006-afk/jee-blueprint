@@ -1,13 +1,5 @@
-# JEE Blueprint V10
+# JEE Blueprint V11
 
-Functional real-data version with:
+English UI, mobile responsive layout, real dates, full syllabus tracker, and Gemini AI fallback support.
 
-- Manual target exam name and target date
-- Today's date auto updates from browser date
-- Full syllabus tracker
-- Accurate decimal progress percentages
-- Welcome back uses profile student name, not email
-- Responsive layout for 100% browser zoom
-- Gemini AI with current model fallback and local fallback if quota is 0
-
-Keep `public/googlefa442ae31764b829.html` for Search Console verification.
+Upload the extracted files/folders to GitHub, then Amplify will deploy automatically.

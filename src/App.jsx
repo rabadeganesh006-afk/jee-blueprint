@@ -151,15 +151,15 @@ function getDisplayName(data) {
 function localStudyFallback(question) {
   const q = question.toLowerCase();
   if (q.includes('plan') || q.includes('revision') || q.includes('strategy')) {
-    return `AI quota active नाही म्हणून हा free local study-helper answer आहे.\n\n7-day revision method:\n1) Day 1-2: NCERT/notes मधून theory + formulas revise कर.\n2) Day 3-4: previous year questions solve कर.\n3) Day 5: weak questions पुन्हा solve कर.\n4) Day 6: chapter test दे.\n5) Day 7: mistakes notebook revise कर.\n\nRule: आधी concept, मग PYQ, मग test-analysis.`;
+    return `AI quota is not active, so this is a free local study-helper answer.\n\n7-day revision method:\n1) Day 1-2: Revise theory and formulas from NCERT/notes.\n2) Day 3-4: Solve previous year questions.\n3) Day 5: Solve weak questions again.\n4) Day 6: Take a chapter test.\n5) Day 7: Revise your mistakes notebook.\n\nRule: concept first, then PYQs, then test analysis.`;
   }
   if (q.includes('integration')) {
-    return `AI quota active नाही म्हणून हा free local study-helper answer आहे.\n\nIntegration साठी sequence:\n1) Standard formulas perfect कर.\n2) Substitution, parts, partial fractions वेगळे practice कर.\n3) Definite integration properties रोज 15 questions.\n4) PYQ solve करताना प्रत्येक question मध्ये method identify कर.\n\nWeak असेल तर पहिल्या दिवशी फक्त formulas + solved examples कर.`;
+    return `AI quota is not active, so this is a free local study-helper answer.\n\nSequence for Integration:\n1) Memorize standard formulas perfectly.\n2) Practice substitution, integration by parts, and partial fractions separately.\n3) Solve 15 definite integration property questions daily.\n4) While solving PYQs, identify the method used in each question.\n\nIf this topic is weak, spend the first day only on formulas and solved examples.`;
   }
   if (q.includes('chemical bonding') || q.includes('bonding')) {
-    return `AI quota active नाही म्हणून हा free local study-helper answer आहे.\n\nChemical Bonding priority:\n1) VSEPR shapes\n2) Hybridisation\n3) MOT basics\n4) Bond order, magnetic nature\n5) Dipole moment\n\nPYQ करताना shape + hybridisation + bond order हे एकत्र revise कर.`;
+    return `AI quota is not active, so this is a free local study-helper answer.\n\nChemical Bonding priority:\n1) VSEPR shapes\n2) Hybridisation\n3) MOT basics\n4) Bond order and magnetic nature\n5) Dipole moment\n\nWhile solving PYQs, revise shape + hybridisation + bond order together.`;
   }
-  return `AI quota active नाही म्हणून हा free local study-helper answer आहे.\n\nतुझा doubt: ${question}\n\nBest approach:\n1) Chapter name identify कर.\n2) Formula/theory 10 min revise कर.\n3) 5 solved examples बघ.\n4) 15 PYQ solve कर.\n5) जिथे अडकलास तो exact step लिहून पुन्हा AI ला विचार.\n\nReal Gemini AI चालू करण्यासाठी Google AI Studio मध्ये या project ची active quota/billing तपासावी लागेल.`;
+  return `AI quota is not active, so this is a free local study-helper answer.\n\nYour doubt: ${question}\n\nBest approach:\n1) Identify the chapter name.\n2) Revise formula/theory for 10 minutes.\n3) Review 5 solved examples.\n4) Solve 15 PYQs.\n5) Write the exact step where you got stuck and ask AI again.\n\nTo use real Gemini AI, check active quota/billing for this project in Google AI Studio.`;
 }
 
 function AppShell({ user, signOut }) {
@@ -294,7 +294,7 @@ function AppShell({ user, signOut }) {
     const name = testScore.name.trim() || 'Chapter Test';
     const score = Number(testScore.score || 0);
     const total = Number(testScore.total || 0);
-    if (!total) return alert('Total marks टाक.');
+    if (!total) return alert('Enter total marks.');
     update((current) => ({
       ...current,
       tests: [{ id: Date.now(), name, score, total, date: new Date().toLocaleDateString() }, ...(current.tests || [])],
@@ -345,7 +345,7 @@ function AppShell({ user, signOut }) {
         <div className="aiHelp">
           <Bot size={42} />
           <strong>Chat. Learn. Improve.</strong>
-          <span>Gemini quota असेल तर real AI, नाहीतर free fallback answer.</span>
+          <span>Real AI works if Gemini quota is available; otherwise a free fallback answer is shown.</span>
           <button onClick={() => setActive('ai')}>Open AI Tutor</button>
         </div>
       </aside>
@@ -410,14 +410,14 @@ function Dashboard({ data, progressValue, doneCount, totalChapters, todayMinutes
 
   return (
     <section className="page">
-      <div className="pageHead"><h1>Dashboard</h1><p>Real data only. Chapter complete, PYQ solve आणि study time add केल्यावरच stats बदलतील.</p></div>
+      <div className="pageHead"><h1>Dashboard</h1><p>Real data only. Stats change only after you complete chapters, solve PYQs, and add study time.</p></div>
       <div className="heroCard compactHero">
         <div className="heroLeft">
           <span className="blueLabel">Your Learning Overview</span>
           <h2>{doneCount === 0 ? 'Start building momentum!' : 'Keep building momentum!'}</h2>
-          <p>Today: <b>{formatDate(new Date())}</b> — ही date रोज browser time नुसार auto update होईल.</p>
+          <p>Today: <b>{formatDate(new Date())}</b> — This date updates automatically every day using your browser time.</p>
           <div className="statPills">
-            <div><CalendarDays size={20} /><b>{data.profile.targetExam || 'Target exam not set'}</b><span>{data.profile.targetDate ? `${formatDate(data.profile.targetDate)}${left !== null ? ` • ${left >= 0 ? `${left} days left` : `${Math.abs(left)} days passed`}` : ''}` : 'Profile मध्ये date set कर'}</span></div>
+            <div><CalendarDays size={20} /><b>{data.profile.targetExam || 'Target exam not set'}</b><span>{data.profile.targetDate ? `${formatDate(data.profile.targetDate)}${left !== null ? ` • ${left >= 0 ? `${left} days left` : `${Math.abs(left)} days passed`}` : ''}` : 'Set the date in Profile'}</span></div>
             <div><Target size={20} /><b>{flaggedCount} flagged</b><span>Revise priority chapters</span></div>
             <div><Clock size={20} /><b>{minutesText(todayMinutes)} today</b><span>Study time</span></div>
           </div>
@@ -435,13 +435,13 @@ function Dashboard({ data, progressValue, doneCount, totalChapters, todayMinutes
       </div>
 
       <div className="grid3 tightGrid">
-        <div className="card"><h3>Exam Target</h3><p className="muted">Target name आणि date manually set कर.</p><input value={targetDraft.targetExam} onChange={(e) => setTargetDraft({ ...targetDraft, targetExam: e.target.value })} placeholder="JEE Advanced 2027" /><input value={targetDraft.targetDate} onChange={(e) => setTargetDraft({ ...targetDraft, targetDate: e.target.value })} type="date" /><button className="primary" onClick={() => updateProfileFields(targetDraft)}>Save target</button></div>
+        <div className="card"><h3>Exam Target</h3><p className="muted">Set the target exam name and date manually.</p><input value={targetDraft.targetExam} onChange={(e) => setTargetDraft({ ...targetDraft, targetExam: e.target.value })} placeholder="JEE Advanced 2027" /><input value={targetDraft.targetDate} onChange={(e) => setTargetDraft({ ...targetDraft, targetDate: e.target.value })} type="date" /><button className="primary" onClick={() => updateProfileFields(targetDraft)}>Save target</button></div>
         <div className="card"><h3>Today's Study Time</h3><div className="bigNumber">{minutesText(todayMinutes)}</div><p>Total study time today</p><div className="btnRow"><button onClick={() => addStudyMinutes(15)}>+15m</button><button onClick={() => addStudyMinutes(30)}>+30m</button><button onClick={() => addStudyMinutes(60)}>+60m</button></div></div>
         <div className="card"><h3>Quick Stats</h3><div className="quickStat"><span>Chapters Completed</span><b>{doneCount} / {totalChapters}</b></div><div className="quickStat"><span>Progress</span><b>{percentText(progressValue)}</b></div><div className="quickStat"><span>PYQs Solved</span><b>{pyqSolved}</b></div><div className="quickStat"><span>Avg. Study Time / Day</span><b>{minutesText(avgMinutes)}</b></div></div>
       </div>
 
       <div className="grid2 syllabusGrid">
-        <div className="card"><h3>Full Syllabus Tracker</h3><p className="muted">पूर्ण chapter list आहे. Search केल्यावर matching chapters दिसतील.</p>{Object.entries(SYLLABUS).map(([subject, chapters]) => {
+        <div className="card"><h3>Full Syllabus Tracker</h3><p className="muted">The full chapter list is available. Matching chapters will appear when you search.</p>{Object.entries(SYLLABUS).map(([subject, chapters]) => {
           const filtered = q ? chapters.filter((chapter) => `${subject} ${chapter}`.toLowerCase().includes(q)) : chapters;
           if (q && filtered.length === 0) return null;
           const done = chapters.filter((chapter) => data.chaptersDone?.[`${subject}:${chapter}`]).length;
@@ -457,17 +457,17 @@ function PyqPage({ data, selectedPyq, setSelectedPyq, markPyqSolved, query }) {
   const q = query.trim().toLowerCase();
   const sets = q ? PYQ_SETS.filter((set) => `${set.title} ${set.subject}`.toLowerCase().includes(q)) : PYQ_SETS;
   const current = PYQ_SETS.find((set) => set.id === selectedPyq);
-  return <section className="page"><div className="pageHead"><h1>PYQ Practice</h1><p>Fake count नाही. “Mark 1 solved” केल्यावरच solved count वाढेल.</p></div><div className="cards4">{sets.map((set) => <div className="card" key={set.id}><span className="badge">{set.subject}</span><h3>{set.title}</h3><p>{set.questions} questions planned</p><p>Difficulty: {set.difficulty}</p><button className="primary" onClick={() => setSelectedPyq(set.id)}>Open set</button><button onClick={() => markPyqSolved(set.id, 1)}>Mark 1 solved</button><small>Solved: {data.pyqSolved?.[set.id] || 0} / {set.questions}</small></div>)}</div>{current && <div className="card mt"><div className="between"><h2>{current.title}</h2><button onClick={() => setSelectedPyq(null)}><X size={18}/></button></div><p>Sample functional practice set. Real questions पुढच्या update मध्ये add करता येतील.</p><div className="questionBox"><b>Q1.</b> This is a placeholder slot for real PYQ content. Solve करून below button दाब.</div><button className="primary" onClick={() => markPyqSolved(current.id, 1)}>I solved this question</button></div>}</section>;
+  return <section className="page"><div className="pageHead"><h1>PYQ Practice</h1><p>No fake count. The solved count increases only after you click “Mark 1 solved”.</p></div><div className="cards4">{sets.map((set) => <div className="card" key={set.id}><span className="badge">{set.subject}</span><h3>{set.title}</h3><p>{set.questions} questions planned</p><p>Difficulty: {set.difficulty}</p><button className="primary" onClick={() => setSelectedPyq(set.id)}>Open set</button><button onClick={() => markPyqSolved(set.id, 1)}>Mark 1 solved</button><small>Solved: {data.pyqSolved?.[set.id] || 0} / {set.questions}</small></div>)}</div>{current && <div className="card mt"><div className="between"><h2>{current.title}</h2><button onClick={() => setSelectedPyq(null)}><X size={18}/></button></div><p>Sample functional practice set. Real questions can be added in a future update.</p><div className="questionBox"><b>Q1.</b> This is a placeholder slot for real PYQ content. Solve it and then click the button below.</div><button className="primary" onClick={() => markPyqSolved(current.id, 1)}>I solved this question</button></div>}</section>;
 }
 
 function MaterialPage({ data, toggleMaterial, query }) {
   const q = query.trim().toLowerCase();
   const materials = q ? MATERIALS.filter((m) => `${m.title} ${m.subject} ${m.detail}`.toLowerCase().includes(q)) : MATERIALS;
-  return <section className="page"><div className="pageHead"><h1>Study Material</h1><p>Read/Unread status save होतं. Real PDFs/notes पुढे जोडू.</p></div><div className="cards4">{materials.map((m) => <div className="card" key={m.id}><span className="badge">{m.subject}</span><h3>{m.title}</h3><p>{m.detail}</p><button className={data.materialRead?.[m.id] ? 'successBtn' : 'primary'} onClick={() => toggleMaterial(m.id)}>{data.materialRead?.[m.id] ? 'Marked as read' : 'Mark as read'}</button></div>)}</div></section>;
+  return <section className="page"><div className="pageHead"><h1>Study Material</h1><p>Read/Unread status is saved. Real PDFs/notes can be added later.</p></div><div className="cards4">{materials.map((m) => <div className="card" key={m.id}><span className="badge">{m.subject}</span><h3>{m.title}</h3><p>{m.detail}</p><button className={data.materialRead?.[m.id] ? 'successBtn' : 'primary'} onClick={() => toggleMaterial(m.id)}>{data.materialRead?.[m.id] ? 'Marked as read' : 'Mark as read'}</button></div>)}</div></section>;
 }
 
 function TestsPage({ data, testScore, setTestScore, saveTest }) {
-  return <section className="page"><div className="pageHead"><h1>Test Series</h1><p>Score manually add करता येतो. नंतर timer + MCQ engine add करू.</p></div><div className="grid2"><div className="card"><h3>Add test score</h3><input value={testScore.name} onChange={(e) => setTestScore({ ...testScore, name: e.target.value })} placeholder="Test name"/><input value={testScore.score} onChange={(e) => setTestScore({ ...testScore, score: e.target.value })} placeholder="Score" type="number"/><input value={testScore.total} onChange={(e) => setTestScore({ ...testScore, total: e.target.value })} placeholder="Total marks" type="number"/><button className="primary" onClick={saveTest}>Save test score</button></div><div className="card"><h3>Saved tests</h3>{(data.tests || []).length === 0 ? <p className="empty">No test scores added yet.</p> : data.tests.map((t) => <div className="quickStat" key={t.id}><span>{t.name}<small>{t.date}</small></span><b>{t.score}/{t.total}</b></div>)}</div></div></section>;
+  return <section className="page"><div className="pageHead"><h1>Test Series</h1><p>You can add scores manually. Timer and MCQ engine can be added later.</p></div><div className="grid2"><div className="card"><h3>Add test score</h3><input value={testScore.name} onChange={(e) => setTestScore({ ...testScore, name: e.target.value })} placeholder="Test name"/><input value={testScore.score} onChange={(e) => setTestScore({ ...testScore, score: e.target.value })} placeholder="Score" type="number"/><input value={testScore.total} onChange={(e) => setTestScore({ ...testScore, total: e.target.value })} placeholder="Total marks" type="number"/><button className="primary" onClick={saveTest}>Save test score</button></div><div className="card"><h3>Saved tests</h3>{(data.tests || []).length === 0 ? <p className="empty">No test scores added yet.</p> : data.tests.map((t) => <div className="quickStat" key={t.id}><span>{t.name}<small>{t.date}</small></span><b>{t.score}/{t.total}</b></div>)}</div></div></section>;
 }
 
 function AiPage({ data, localStudyFallback }) {
@@ -479,7 +479,7 @@ function AiPage({ data, localStudyFallback }) {
 
   async function askTutor() {
     const text = question.trim();
-    if (!text) { setError('पहिले doubt/question लिही.'); return; }
+    if (!text) { setError('First type your doubt/question.'); return; }
     setLoading(true); setError(''); setAnswer('');
     try {
       const context = JSON.stringify({
@@ -493,13 +493,13 @@ function AiPage({ data, localStudyFallback }) {
       const aiText = result?.data || '';
       if (result?.errors?.length) {
         setAnswer(localStudyFallback(text));
-        setError('Backend AI call failed, म्हणून local fallback answer दाखवला आहे.');
+        setError('Backend AI call failed, so a local fallback answer is shown.');
       } else {
         setAnswer(aiText || localStudyFallback(text));
       }
     } catch (err) {
       setAnswer(localStudyFallback(text));
-      setError('Gemini API quota/connection issue असू शकतो, म्हणून local fallback answer दाखवला आहे.');
+      setError('There may be a Gemini API quota/connection issue, so a local fallback answer is shown.');
     } finally { setLoading(false); }
   }
 
@@ -507,12 +507,12 @@ function AiPage({ data, localStudyFallback }) {
 
   return (
     <section className="page">
-      <div className="pageHead"><h1>AI Tutor</h1><p>Gemini quota असेल तर real AI answer येईल. Quota 0 असेल तर raw error न दाखवता free fallback answer येईल.</p></div>
+      <div className="pageHead"><h1>AI Tutor</h1><p>If Gemini quota is available, you will get a real AI answer. If quota is 0, the app shows a free fallback answer instead of a raw error.</p></div>
       <div className="card aiTutorPanel">
-        <div className="aiTutorTop"><div className="aiAvatar"><Bot size={30} /></div><div><h2>Ask JEE Blueprint AI</h2><p>Physics, Chemistry, Maths doubts, study plan, revision strategy विचार.</p></div></div>
-        <div className="aiExamples"><button onClick={() => example('Explain Kirchhoff laws with one JEE level example')}>Kirchhoff laws explain कर</button><button onClick={() => example('Give me a 7 day revision plan for Chemical Bonding')}>7 day revision plan</button><button onClick={() => example('How should I revise Integration for JEE Advanced?')}>Integration strategy</button></div>
+        <div className="aiTutorTop"><div className="aiAvatar"><Bot size={30} /></div><div><h2>Ask JEE Blueprint AI</h2><p>Ask Physics, Chemistry, Maths doubts, study plans, and revision strategy.</p></div></div>
+        <div className="aiExamples"><button onClick={() => example('Explain Kirchhoff laws with one JEE level example')}>Explain Kirchhoff laws</button><button onClick={() => example('Give me a 7 day revision plan for Chemical Bonding')}>7 day revision plan</button><button onClick={() => example('How should I revise Integration for JEE Advanced?')}>Integration strategy</button></div>
         <textarea className="aiInput" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Type your doubt in English, Hindi or Marathi..." rows={5} />
-        <div className="aiActionRow"><button className="primary" onClick={askTutor} disabled={loading}>{loading ? 'AI thinking...' : 'Ask AI Tutor'} <Send size={17} /></button><small>Note: Free API quota Google project वर depend करते.</small></div>
+        <div className="aiActionRow"><button className="primary" onClick={askTutor} disabled={loading}>{loading ? 'AI thinking...' : 'Ask AI Tutor'} <Send size={17} /></button><small>Note: Free API quota depends on your Google project.</small></div>
         {error && <div className="aiError">{error}</div>}
         {answer && <div className="aiAnswer"><h3>Answer</h3><pre>{answer}</pre></div>}
       </div>
@@ -527,7 +527,7 @@ function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setE
     ['language', 'Preferred Language', 'text'], ['studyGoal', 'Study Goal', 'text'], ['dailyStudyTime', 'Daily Study Time', 'text'], ['weakAreas', 'Weak Areas', 'text'], ['preferredContent', 'Preferred Content Type', 'text'],
   ];
   const left = daysLeft(data.profile.targetDate);
-  return <section className="page"><div className="pageHead"><h1>Profile</h1><p>इथून student name, exam target आणि date update कर. Sign out इथेच आहे.</p></div><div className="profileHero"><div className="avatar">👨‍🎓</div><div><h2>{data.profile.fullName || 'Student Profile'}</h2><p>{data.profile.email || 'Email not available'}</p><span className="badge">{data.profile.targetExam || 'Target not set'}</span></div><div className="targetSummary"><b>{data.profile.targetDate ? formatDate(data.profile.targetDate) : 'Date not set'}</b><span>{left === null ? 'Set target date' : left >= 0 ? `${left} days left` : `${Math.abs(left)} days passed`}</span></div></div><div className="profileGrid"><div className="card wide"><div className="between"><h3>Profile Details</h3>{editingProfile ? <button onClick={saveProfile}><Save size={16}/> Save</button> : <button onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit</button>}</div><div className="detailsGrid">{fields.map(([key, label, type]) => <label key={key}><span>{label}</span>{editingProfile && key !== 'email' ? <input value={profileDraft[key] || ''} onChange={(e) => setProfileDraft({ ...profileDraft, [key]: e.target.value })} placeholder={`Enter ${label}`} type={type} /> : <b>{key === 'targetDate' && data.profile[key] ? formatDate(data.profile[key]) : data.profile[key] || '-'}</b>}</label>)}</div></div><div className="card actions"><h3>Account Actions</h3><button className="primary" onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit Profile</button>{editingProfile && <button onClick={saveProfile}><Save size={16}/> Save Changes</button>}<button className="danger" onClick={signOut}><LogOut size={16}/> Sign out</button><button onClick={resetLocalData}><RotateCcw size={16}/> Reset this browser data</button><div className="safeBox">🔒 Data आत्ता या browser मध्ये save होते. Cloud sync नंतर add करू.</div></div></div></section>;
+  return <section className="page"><div className="pageHead"><h1>Profile</h1><p>Update the student name, exam target, and date here. Sign out is available here.</p></div><div className="profileHero"><div className="avatar">👨‍🎓</div><div><h2>{data.profile.fullName || 'Student Profile'}</h2><p>{data.profile.email || 'Email not available'}</p><span className="badge">{data.profile.targetExam || 'Target not set'}</span></div><div className="targetSummary"><b>{data.profile.targetDate ? formatDate(data.profile.targetDate) : 'Date not set'}</b><span>{left === null ? 'Set target date' : left >= 0 ? `${left} days left` : `${Math.abs(left)} days passed`}</span></div></div><div className="profileGrid"><div className="card wide"><div className="between"><h3>Profile Details</h3>{editingProfile ? <button onClick={saveProfile}><Save size={16}/> Save</button> : <button onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit</button>}</div><div className="detailsGrid">{fields.map(([key, label, type]) => <label key={key}><span>{label}</span>{editingProfile && key !== 'email' ? <input value={profileDraft[key] || ''} onChange={(e) => setProfileDraft({ ...profileDraft, [key]: e.target.value })} placeholder={`Enter ${label}`} type={type} /> : <b>{key === 'targetDate' && data.profile[key] ? formatDate(data.profile[key]) : data.profile[key] || '-'}</b>}</label>)}</div></div><div className="card actions"><h3>Account Actions</h3><button className="primary" onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit Profile</button>{editingProfile && <button onClick={saveProfile}><Save size={16}/> Save Changes</button>}<button className="danger" onClick={signOut}><LogOut size={16}/> Sign out</button><button onClick={resetLocalData}><RotateCcw size={16}/> Reset this browser data</button><div className="safeBox">🔒 Data is currently saved in this browser. Cloud sync can be added later.</div></div></div></section>;
 }
 
 export default function App() {

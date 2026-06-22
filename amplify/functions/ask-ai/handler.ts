@@ -18,15 +18,15 @@ const MODELS = [
 function fallbackAnswer(question: string) {
   const q = question.toLowerCase();
   if (q.includes('integration')) {
-    return `Gemini API quota active नाही, म्हणून free fallback answer देतो.\n\nIntegration revision:\n1) Standard formulas revise कर.\n2) Substitution, by parts, partial fraction वेगळे practice कर.\n3) Definite integration properties रोज 15 questions solve कर.\n4) PYQ मध्ये method identify कर: substitution / parts / property.\n5) Mistake notebook मध्ये formula + stuck step लिही.`;
+    return `Gemini API quota is not active, so this is a free fallback answer.\n\nIntegration revision:\n1) Revise standard formulas.\n2) Practice substitution, integration by parts, and partial fractions separately.\n3) Solve 15 definite integration property questions daily.\n4) In each PYQ, identify the method: substitution / parts / property.\n5) In your mistake notebook, write the formula and the exact stuck step.`;
   }
   if (q.includes('chemical bonding') || q.includes('bonding')) {
-    return `Gemini API quota active नाही, म्हणून free fallback answer देतो.\n\nChemical Bonding priority:\n1) VSEPR shapes\n2) Hybridisation\n3) MOT basics\n4) Bond order and magnetic nature\n5) Dipole moment\n\nपहिले NCERT + short notes, नंतर chapter-wise PYQ.`;
+    return `Gemini API quota is not active, so this is a free fallback answer.\n\nChemical Bonding priority:\n1) VSEPR shapes\n2) Hybridisation\n3) MOT basics\n4) Bond order and magnetic nature\n5) Dipole moment\n\nFirst revise NCERT + short notes, then solve chapter-wise PYQs.`;
   }
   if (q.includes('plan') || q.includes('revision') || q.includes('strategy')) {
-    return `Gemini API quota active नाही, म्हणून free fallback answer देतो.\n\nSimple 7-day plan:\nDay 1-2: Theory + formulas\nDay 3-4: PYQ practice\nDay 5: Weak questions repeat\nDay 6: Chapter test\nDay 7: Mistake notebook revise\n\nRule: concept → PYQ → test → analysis.`;
+    return `Gemini API quota is not active, so this is a free fallback answer.\n\nSimple 7-day plan:\nDay 1-2: Theory + formulas\nDay 3-4: PYQ practice\nDay 5: Repeat weak questions\nDay 6: Chapter test\nDay 7: Mistake notebook revision\n\nRule: concept → PYQ → test → analysis.`;
   }
-  return `Gemini API quota active नाही, म्हणून free fallback answer देतो.\n\nतुझा doubt: ${question}\n\nApproach:\n1) Chapter identify कर.\n2) Formula/theory revise कर.\n3) 5 solved examples बघ.\n4) 15 PYQ solve कर.\n5) exact stuck step लिहून पुन्हा विचार.`;
+  return `Gemini API quota is not active, so this is a free fallback answer.\n\nYour doubt: ${question}\n\nApproach:\n1) Identify the chapter.\n2) Revise formula/theory.\n3) Review 5 solved examples.\n4) Solve 15 PYQs.\n5) Write the exact stuck step and ask again.`;
 }
 
 export const handler: Schema['askAi']['functionHandler'] = async (event) => {
@@ -81,5 +81,5 @@ export const handler: Schema['askAi']['functionHandler'] = async (event) => {
     }
   }
 
-  return `${fallbackAnswer(question)}\n\nNote: Real Gemini AI साठी Google AI Studio project मध्ये usable quota/billing active असणे गरजेचे आहे. Last API message: ${lastError || 'No quota available.'}`;
+  return `${fallbackAnswer(question)}\n\nNote: Real Gemini AI requires usable quota/billing to be active in the Google AI Studio project. Last API message: ${lastError || 'No quota available.'}`;
 };
