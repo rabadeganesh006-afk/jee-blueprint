@@ -1,17 +1,9 @@
-# JEE Blueprint
+# JEE Blueprint V2 Tabs Fixed 2
 
-Auth-enabled Vite React version of the JEE Blueprint app.
+Includes Sign in/Register via AWS Amplify Auth plus Dashboard, PYQ, Study Material, Tests, AI Tutor, and Profile tabs.
 
-## Features
-- AWS Amplify Auth with email/password sign in and sign up
-- JEE syllabus tracker
-- Study streak and study time log
-- Revision queue
+Fixes Amplify build by adding required CDK dependencies:
+- aws-cdk-lib
+- constructs
 
-## Deploy
-Upload all files and folders in this project root to GitHub. Amplify Hosting will deploy backend auth and frontend.
-
-
-## V2 update
-Adds tab navigation: Dashboard, PYQ, Study Material, Tests, AI Tutor, Profile.
-Auth remains enabled through AWS Amplify Authenticator.
+Deploy with AWS Amplify connected to GitHub main branch.
