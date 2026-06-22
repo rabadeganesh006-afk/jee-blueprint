@@ -1,7 +1,12 @@
 {
   "compilerOptions": {
     "paths": {
-      "$amplify/*": ["../.amplify/generated/*"]
-    }
+      "$amplify/*": [
+        "../.amplify/generated/*"
+      ]
+    },
+    "types": [
+      "node"
+    ]
   }
 }
