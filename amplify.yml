@@ -3,13 +3,14 @@ backend:
   phases:
     build:
       commands:
-        - npm ci || npm install
-        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+        - npm install --legacy-peer-deps
+        - npx ampx pipeline-deploy --branch main --app-id d2zaokzgxwci43
 frontend:
   phases:
     preBuild:
       commands:
-        - npm ci || npm install
+        - npm install --legacy-peer-deps
+        - npx ampx generate outputs --branch main --app-id d2zaokzgxwci43
     build:
       commands:
         - npm run build
