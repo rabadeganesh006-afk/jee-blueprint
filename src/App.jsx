@@ -900,7 +900,7 @@ function PwSidebar({ activeTab, setActiveTab }) {
   const sections = ["LEARN ONLINE", "STUDY PACKS", "EXPLORE", "ACCOUNT"];
   return (
     <aside className="pw-sidebar">
-      <div className="pw-brand"><div className="pw-logo">B</div><strong>Blueprint</strong></div>
+      <div className="pw-brand"><img src="/logo.png" alt="JEE Blueprint" className="pw-brand-img" /></div>
       {sections.map(section => (
         <div key={section} className="pw-menu-section">
           <span className="pw-menu-label">{section}</span>
@@ -928,7 +928,8 @@ function PwTopbar({ activeLabel }) {
 const PW_STYLE = `
 .pw-platform{min-height:100vh;background:#f7f8fb;color:#101827;font-family:Inter,system-ui,sans-serif;display:grid;grid-template-columns:270px 1fr;}
 .pw-sidebar{background:#fff;border-right:1px solid #e5e7eb;min-height:100vh;position:sticky;top:0;align-self:start;padding:18px 0;}
-.pw-brand{height:52px;display:flex;align-items:center;gap:12px;padding:0 26px 18px;border-bottom:1px solid #eef2f7;font-size:20px;}
+.pw-brand{height:64px;display:flex;align-items:center;gap:12px;padding:0 20px 16px;border-bottom:1px solid #eef2f7;}
+.pw-brand-img{height:48px;width:auto;max-width:210px;object-fit:contain;display:block;}
 .pw-logo{width:34px;height:34px;border-radius:50%;border:2px solid #111827;display:grid;place-items:center;font-weight:900;background:#f8fafc;}
 .pw-menu-section{padding:22px 12px 0;}
 .pw-menu-label{display:block;padding:0 20px 10px;color:#8b95a7;font-size:12px;font-weight:800;letter-spacing:.06em;}
