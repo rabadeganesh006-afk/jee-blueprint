@@ -1652,3 +1652,131 @@ summary span { color: var(--muted); font-size: 12px; }
   .contactHeroHead { align-items: flex-start; flex-direction: column; }
   .landingContactSection { width: min(100% - 28px, 1120px); padding: 20px; border-radius: 24px; }
 }
+
+/* V30: Legal pages, privacy policy, terms and data deletion request */
+.landingFooterLegal {
+  width: min(1120px, calc(100% - 44px));
+  margin: 8px auto 36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  border: 1px solid rgba(37,99,235,.12);
+  border-radius: 22px;
+  background: rgba(255,255,255,.86);
+  box-shadow: 0 18px 45px rgba(15,23,42,.06);
+  color: #64748b;
+  font-weight: 750;
+}
+.landingFooterLegal div { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.landingFooterLegal button {
+  border: 1px solid #dbe7ff;
+  background: #f8fbff;
+  color: #2563eb;
+  font-weight: 850;
+  border-radius: 999px;
+  padding: 9px 13px;
+  cursor: pointer;
+}
+.legalPublicShell {
+  min-height: 100vh;
+  padding: 24px 0 46px;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+}
+.legalPublicPage,
+.legalPage {
+  width: min(1040px, calc(100% - 44px));
+  margin: 0 auto;
+}
+.legalPage { width: 100%; }
+.legalHeader {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.legalHeader .outlineBtn { width: fit-content; }
+.legalHeader h1 {
+  margin: 0;
+  font-size: clamp(34px, 5vw, 62px);
+  letter-spacing: -1.7px;
+  line-height: 1.02;
+  color: var(--text, #0f172a);
+}
+.legalPublicPage .legalHeader h1 { color: #0f172a; }
+.legalHeader p {
+  margin: 0;
+  color: var(--muted, #64748b);
+  font-size: 16px;
+  line-height: 1.65;
+}
+.legalCardStack {
+  display: grid;
+  gap: 14px;
+}
+.legalCard {
+  display: grid;
+  gap: 10px;
+  line-height: 1.68;
+}
+.legalCard h3 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -.2px;
+}
+.legalCard p {
+  margin: 0;
+  color: var(--muted, #64748b);
+}
+.legalTwoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.deleteRequestForm {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+.deleteRequestForm h3 { margin: 0; font-size: 24px; }
+.deleteRequestForm label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-weight: 850;
+}
+.deleteRequestForm input,
+.deleteRequestForm textarea {
+  width: 100%;
+  border: 1px solid var(--border, #dbe3ef);
+  background: var(--soft, #f8fafc);
+  color: var(--text, #0f172a);
+  border-radius: 14px;
+  padding: 12px 14px;
+  outline: none;
+  resize: vertical;
+}
+.deleteRequestForm button,
+.legalCard button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: fit-content;
+}
+.grid2mini {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.app.dark .legalHeader h1,
+.app.dark .legalCard h3 { color: #f8fafc; }
+.app.dark .deleteRequestForm input,
+.app.dark .deleteRequestForm textarea { background: #07111f; border-color: #203047; color: #f8fafc; }
+@media (max-width: 780px) {
+  .landingFooterLegal { width: min(100% - 28px, 1120px); flex-direction: column; align-items: flex-start; }
+  .landingFooterLegal div { justify-content: flex-start; }
+  .legalPublicPage, .legalPage { width: min(100% - 28px, 1040px); }
+  .legalTwoCol, .grid2mini { grid-template-columns: 1fr; }
+}
