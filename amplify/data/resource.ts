@@ -22,10 +22,16 @@ const schema = a.schema({
     .model({
       fullName: a.string(),
       email: a.string(),
+      mobile: a.string(),
+      className: a.string(),
       classLevel: a.string(), // 11th IIT JEE / 12th IIT JEE / Dropper
       city: a.string(),
+      board: a.string(),
       preferredLanguage: a.string(),
       studyGoal: a.string(),
+      dailyStudyTime: a.string(),
+      weakAreas: a.string(),
+      preferredContent: a.string(),
       avatarKey: a.string(),
       onboardingCompleted: a.boolean(),
     })

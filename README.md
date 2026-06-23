@@ -1,12 +1,15 @@
-# Study Blueprint V32 - Database Foundation
+# Study Blueprint V33 — Profile + Exam Target Cloud Sync
 
-Phase 2A database foundation has been added.
+This version starts Phase 2B.
 
-What changed:
-- Added full Amplify Data models for profile, preferences, exam target, topic progress, flagged topics, study sessions, timer goals, PYQ progress, tasks, activity logs, study material progress, test attempts, contact messages, delete-data requests, feedback, and content catalog models.
-- Student-owned records use owner-based authorization.
-- Catalog/content records are read-only for signed-in users for now.
-- Frontend is intentionally not fully connected to the database yet. This version is the backend foundation only.
+## Added
+- Keeps all V32 database foundation models.
+- Adds profile and exam target cloud sync using Amplify Data models.
+- Profile still saves locally as a browser fallback.
+- Profile page now shows cloud sync status.
+- Includes the mobile landing/delete/auth hotfix.
 
-Next phase:
-- V33 will connect Profile + Exam Target to the database.
+## Notes
+- Profile photo still stays local until the Storage/S3 phase.
+- Topic progress, timer, tasks and PYQ sync will be added in later phases.
+- If cloud sync is not ready during deploy, the app falls back to local browser data.

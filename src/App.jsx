@@ -178,6 +178,64 @@ function loadData(key, email) {
   return defaultData(email);
 }
 
+
+function profileToCloudPayload(profile = {}, stream = '') {
+  return {
+    fullName: profile.fullName || '',
+    email: profile.email || '',
+    mobile: profile.mobile || '',
+    className: profile.className || '',
+    classLevel: stream || '',
+    city: profile.city || '',
+    board: profile.board || '',
+    preferredLanguage: profile.language || '',
+    studyGoal: profile.studyGoal || '',
+    dailyStudyTime: profile.dailyStudyTime || '',
+    weakAreas: profile.weakAreas || '',
+    preferredContent: profile.preferredContent || '',
+    onboardingCompleted: true,
+  };
+}
+
+function cloudProfileToLocal(remote = {}, currentProfile = {}, email = '') {
+  return {
+    ...currentProfile,
+    fullName: remote.fullName || currentProfile.fullName || '',
+    email: email || remote.email || currentProfile.email || '',
+    mobile: remote.mobile || currentProfile.mobile || '',
+    className: remote.className || currentProfile.className || '',
+    city: remote.city || currentProfile.city || '',
+    board: remote.board || currentProfile.board || '',
+    language: remote.preferredLanguage || currentProfile.language || 'English',
+    studyGoal: remote.studyGoal || currentProfile.studyGoal || '',
+    dailyStudyTime: remote.dailyStudyTime || currentProfile.dailyStudyTime || '',
+    weakAreas: remote.weakAreas || currentProfile.weakAreas || '',
+    preferredContent: remote.preferredContent || currentProfile.preferredContent || '',
+  };
+}
+
+function targetToCloudPayload(profile = {}) {
+  const name = profile.targetExam || 'JEE Advanced 2027';
+  return {
+    targetName: name,
+    targetDate: profile.targetDate || '',
+    targetType: name.toLowerCase().includes('advanced') ? 'JEE Advanced' : name.toLowerCase().includes('main') ? 'JEE Main' : 'Custom',
+    notes: 'Saved from Study Blueprint profile page',
+    isActive: true,
+  };
+}
+
+async function upsertCloudRecord(model, knownId, payload) {
+  let id = knownId || null;
+  if (!id) {
+    const existing = await model.list({ limit: 1 });
+    id = existing?.data?.[0]?.id || null;
+  }
+  const result = id ? await model.update({ id, ...payload }) : await model.create(payload);
+  if (result?.errors?.length) throw new Error(result.errors[0]?.message || 'Cloud sync error');
+  return result?.data || null;
+}
+
 function getDisplayName(data) {
   const profileName = data.profile.fullName?.trim();
   if (profileName) return profileName.split(' ')[0];
@@ -349,17 +407,19 @@ function LegalContent({ type, inApp = false, onBack, onRequestDelete, onClearBro
           <h1>{pageTitle}</h1>
           <p>Request deletion of your Study Blueprint data or clear data saved in this browser.</p>
         </div>
-        <div className="legalTwoCol">
+        <div className={inApp ? 'legalTwoCol' : 'legalOneCol'}>
           <article className="card legalCard">
             <h3>What can be deleted?</h3>
             <p>You can request deletion of basic profile and study-tracking data connected to your account, such as name, class, target exam, target date, topic progress, tasks, study time, PYQ progress and uploaded profile photo where applicable.</p>
-            <p>Some contact records may be kept for a limited time only to respond to support/business messages and prevent misuse.</p>
+            <p>Use the form below with the same email used for Study Blueprint so the request can be matched correctly.</p>
           </article>
-          <article className="card legalCard">
-            <h3>Clear this browser data</h3>
-            <p>This removes local Study Blueprint data saved in this browser. It does not delete your login account from AWS Amplify/Auth.</p>
-            {onClearBrowserData ? <button className="danger" onClick={onClearBrowserData}><Trash2 size={16}/> Clear browser data</button> : <p className="muted">Sign in and open Profile or Delete My Data to clear browser data.</p>}
-          </article>
+          {inApp && (
+            <article className="card legalCard">
+              <h3>Clear this browser data</h3>
+              <p>This removes local Study Blueprint data saved in this browser. It does not delete your login account from AWS Amplify/Auth.</p>
+              {onClearBrowserData && <button className="danger" onClick={onClearBrowserData}><Trash2 size={16}/> Clear browser data</button>}
+            </article>
+          )}
         </div>
         <DeleteRequestForm onSubmitted={onRequestDelete} />
       </section>
@@ -429,7 +489,15 @@ function DeleteRequestForm({ onSubmitted }) {
 }
 
 function LegalPublicPage({ type, onBack }) {
-  return <main className="landing legalPublicShell"><LegalContent type={type} onBack={onBack} /></main>;
+  return (
+    <main className="landing legalPublicShell">
+      <div className="legalPublicTop">
+        <img src="/study-blueprint-logo.svg" alt="Study Blueprint" />
+        <button className="outlineBtn" onClick={onBack}>← Back to home</button>
+      </div>
+      <LegalContent type={type} />
+    </main>
+  );
 }
 
 function AppShell({ user, signOut }) {
@@ -445,11 +513,51 @@ function AppShell({ user, signOut }) {
   const streamOptions = ['11th IIT JEE', '12th IIT JEE', 'Dropper'];
   const [testScore, setTestScore] = useState({ name: '', score: '', total: '' });
   const [nowTick, setNowTick] = useState(Date.now());
+  const cloudClient = useMemo(() => generateClient(), []);
+  const [cloudRecordIds, setCloudRecordIds] = useState({ profileId: null, targetId: null });
+  const [cloudSync, setCloudSync] = useState({ state: 'checking', message: 'Checking cloud profile sync...' });
 
   useEffect(() => {
     const timer = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadCloudProfile() {
+      try {
+        setCloudSync({ state: 'checking', message: 'Checking cloud profile sync...' });
+        const [profileResult, targetResult] = await Promise.all([
+          cloudClient.models.StudentProfile.list({ limit: 1 }),
+          cloudClient.models.ExamTarget.list({ limit: 10 }),
+        ]);
+        if (cancelled) return;
+        const remoteProfile = profileResult?.data?.[0] || null;
+        const remoteTarget = (targetResult?.data || []).find((item) => item.isActive) || targetResult?.data?.[0] || null;
+        setCloudRecordIds({ profileId: remoteProfile?.id || null, targetId: remoteTarget?.id || null });
+        if (remoteProfile || remoteTarget) {
+          setData((current) => {
+            const mergedProfile = {
+              ...(remoteProfile ? cloudProfileToLocal(remoteProfile, current.profile, email) : { ...current.profile, email }),
+              ...(remoteTarget ? { targetExam: remoteTarget.targetName || current.profile.targetExam, targetDate: remoteTarget.targetDate || current.profile.targetDate } : {}),
+              email,
+            };
+            const next = { ...current, profile: mergedProfile };
+            localStorage.setItem(storageKey, JSON.stringify(next));
+            setProfileDraft(mergedProfile);
+            return next;
+          });
+          setCloudSync({ state: 'synced', message: 'Cloud profile loaded. Future profile saves will sync to database.' });
+        } else {
+          setCloudSync({ state: 'ready', message: 'Cloud database ready. Save your profile once to sync it.' });
+        }
+      } catch (error) {
+        setCloudSync({ state: 'local', message: 'Cloud sync is not available yet. Local browser backup is active.' });
+      }
+    }
+    loadCloudProfile();
+    return () => { cancelled = true; };
+  }, [cloudClient, email, storageKey]);
 
   function update(patchOrFn) {
     setData((current) => {
@@ -656,9 +764,27 @@ function AppShell({ user, signOut }) {
     setTestScore({ name: '', score: '', total: '' });
   }
 
-  function saveProfile() {
-    update((current) => ({ ...current, profile: { ...current.profile, ...profileDraft, email }, activities: pushActivity(current, 'Profile details updated') }));
+  async function saveProfile() {
+    const nextProfile = { ...profileDraft, email };
+    update((current) => ({ ...current, profile: { ...current.profile, ...nextProfile }, activities: pushActivity(current, 'Profile details updated') }));
     setEditingProfile(false);
+    setCloudSync({ state: 'saving', message: 'Saving profile to cloud database...' });
+    try {
+      const savedProfile = await upsertCloudRecord(
+        cloudClient.models.StudentProfile,
+        cloudRecordIds.profileId,
+        profileToCloudPayload(nextProfile, data.stream)
+      );
+      const savedTarget = await upsertCloudRecord(
+        cloudClient.models.ExamTarget,
+        cloudRecordIds.targetId,
+        targetToCloudPayload(nextProfile)
+      );
+      setCloudRecordIds({ profileId: savedProfile?.id || cloudRecordIds.profileId, targetId: savedTarget?.id || cloudRecordIds.targetId });
+      setCloudSync({ state: 'synced', message: 'Profile and exam target synced to cloud database.' });
+    } catch (error) {
+      setCloudSync({ state: 'local', message: 'Saved in this browser. Cloud sync failed or is still deploying.' });
+    }
   }
 
   function resetLocalData() {
@@ -732,7 +858,7 @@ function AppShell({ user, signOut }) {
         {data.active === 'contact' && <ContactPage data={data} />}
         {data.active === 'privacy' && <LegalContent type="privacy" inApp />}
         {data.active === 'deleteData' && <LegalContent type="deleteData" inApp onClearBrowserData={resetLocalData} />}
-        {data.active === 'profile' && <ProfilePage data={data} profileDraft={profileDraft} setProfileDraft={setProfileDraft} editingProfile={editingProfile} setEditingProfile={setEditingProfile} saveProfile={saveProfile} signOut={signOut} resetLocalData={resetLocalData} />}
+        {data.active === 'profile' && <ProfilePage data={data} profileDraft={profileDraft} setProfileDraft={setProfileDraft} editingProfile={editingProfile} setEditingProfile={setEditingProfile} saveProfile={saveProfile} signOut={signOut} resetLocalData={resetLocalData} cloudSync={cloudSync} />}
       </main>
     </div>
   );
@@ -1063,7 +1189,7 @@ function ContactPage({ data }) {
   </section>;
 }
 
-function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setEditingProfile, saveProfile, signOut, resetLocalData }) {
+function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setEditingProfile, saveProfile, signOut, resetLocalData, cloudSync }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const fields = [
     ['fullName', 'Full Name', 'text'], ['mobile', 'Mobile No', 'text'], ['email', 'Email', 'text'], ['city', 'City / Village / Town', 'text'],
@@ -1135,6 +1261,7 @@ function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setE
         </div>
         <div className="profileSideStack">
           <div className="card actions actionsV23"><h3>Account Actions</h3><button className="primary" onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit Profile</button>{editingProfile && <button onClick={saveProfile}><Save size={16}/> Save Changes</button>}<button className="danger" onClick={() => setShowLogoutConfirm(true)}><LogOut size={16}/> Sign out</button><button onClick={resetLocalData}><RotateCcw size={16}/> Reset this browser data</button></div>
+          <div className={`safeBox safeBoxV23 syncStatusBox ${cloudSync?.state || 'local'}`}><b>{cloudSync?.state === 'synced' ? 'Cloud sync active' : cloudSync?.state === 'saving' ? 'Saving...' : cloudSync?.state === 'ready' ? 'Cloud ready' : 'Privacy first'}</b><span>{cloudSync?.message || 'We ask only for basic study details needed for your dashboard.'}</span></div>
           <div className="safeBox safeBoxV23"><b>Privacy first</b><span>We ask only for basic study details needed for your dashboard. Never share passwords, OTPs, payment details or private documents.</span></div>
         </div>
       </div>
@@ -1191,7 +1318,7 @@ function AuthLayout({ authScreen, setAuthScreen, publicPage, setPublicPage }) {
               <p>{authScreen === 'signUp' ? 'Start tracking your study progress.' : 'Sign in to continue your dashboard.'}</p>
             </div>
           </div>
-          <Authenticator key={authScreen} initialState={authScreen} />
+          <Authenticator key={authScreen} initialState={authScreen} loginMechanisms={['email']} hideSignUp={authScreen === 'signIn'} />
         </section>
       </div>
     </div>
