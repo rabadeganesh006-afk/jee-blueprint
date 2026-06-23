@@ -914,7 +914,7 @@ function ContactPage({ data }) {
     <div className="contactLayout">
       <form className="card contactForm" onSubmit={submitContact}>
         <h3>Send a message</h3>
-        <p className="mutedText">This form sends messages securely through Formspree. Your personal phone number is not shown publicly.</p>
+        <p className="mutedText">Send your question, feedback, bug report, or collaboration request. We will review it and reply as soon as possible.</p>
         <div className="formGrid2">
           <label>Name<input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Your name" /></label>
           <label>Email<input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="your@email.com" /></label>
@@ -934,13 +934,13 @@ function ContactPage({ data }) {
       <aside className="contactSideStack">
         <div className="card contactInfoCard">
           <Mail size={24} />
-          <h3>Business contact setup</h3>
-          <p>Messages from this form will be sent through Formspree. Add your official support email in Formspree settings before client demos.</p>
+          <h3>We are here to help</h3>
+          <p>For support, feedback, partnership, or coaching-class customization, send a clear message with your email address.</p>
         </div>
         <div className="card contactInfoCard safe">
           <ShieldCheck size={24} />
-          <h3>Your data is safe with us</h3>
-          <p>Contact messages are sent through Formspree and a small recent-message preview is saved only in this browser.</p>
+          <h3>Safe contact only</h3>
+          <p>Please do not share passwords, OTPs, API keys, payment details, or private student information in this form.</p>
         </div>
         <div className="card">
           <h3>Recent sent messages</h3>
