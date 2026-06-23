@@ -1,3 +1,8 @@
-# Study Blueprint V23
+# Study Blueprint V24
 
-Profile/dashboard polish, profile image upload, safe data panel, dark/light theme styling, and exam target section retained in Profile.
+Fixes:
+- Sidebar logo/text fit improved for desktop widths.
+- Dashboard overview alignment polished.
+- Added amber smart-focus banner inside the dashboard overview card.
+- Kept improved profile layout with profile photo upload, exam target, future card and data safety panel.
+- Dark/light theme styling improved for these sections.

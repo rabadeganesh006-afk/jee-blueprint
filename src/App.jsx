@@ -4,7 +4,7 @@ import { generateClient } from 'aws-amplify/api';
 import '@aws-amplify/ui-react/styles.css';
 import {
   BookOpen, Bot, CalendarDays, Check, CheckCircle2, ChevronDown, Circle, Clock, FileText,
-  Home, LogOut, Moon, PenLine, Pi, Plus, Save, Search, Send, Sun, Target,
+  Home, LogOut, Moon, PenLine, Pi, Plus, Save, Search, Send, Sun, Target, Sparkles,
   Trash2, Trophy, UserRound, X, RotateCcw, Star
 } from 'lucide-react';
 import { PLANNER } from './plannerData';
@@ -555,6 +555,7 @@ function Dashboard({ data, planner, progressValue, doneCount, totalTopics, total
   const visibleActivities = (data.activities || []).filter((activity) => !activity.text?.startsWith('Unchecked topic:'));
   const allPlannerTopics = Object.entries(planner).flatMap(([subject, chapters]) => chapters.flatMap((chapter) => chapter.topics.map((topic) => ({ subject, chapter, topic }))));
   const nextPending = allPlannerTopics.find(({ topic }) => !data.topicsDone?.[topic.id]);
+  const firstFlagged = allPlannerTopics.find(({ topic }) => data.topicsFlagged?.[topic.id]);
   const nextActionTopics = allPlannerTopics.filter(({ topic }) => !data.topicsDone?.[topic.id]).slice(0, 3);
   const subjectStats = Object.entries(planner).map(([subject, chapters]) => {
     const topics = chapters.flatMap((chapter) => chapter.topics);
@@ -594,6 +595,16 @@ function Dashboard({ data, planner, progressValue, doneCount, totalTopics, total
             <button onClick={() => setStatusFilter('Completed')}><CheckCircle2 size={20} /><b>{doneCount} / {totalTopics} topics</b><span>Completed topics</span></button>
             <button onClick={() => setStatusFilter(statusFilter === 'Flagged' ? 'All' : 'Flagged')}><Target size={20} /><b>{flaggedCount} flagged</b><span>{statusFilter === 'Flagged' ? 'Showing flagged topics' : 'Show priority topics'}</span></button>
             <button className="studyTimePill"><Clock size={20} /><b>Today's Study Time</b><span>{minutesText(todayMinutes)} • {timer.running ? 'Timer running' : liveTimerSeconds > 0 ? 'Timer paused' : 'Not started'}</span></button>
+          </div>
+          <div className="focusAlert">
+            <Sparkles size={18} />
+            <span>
+              {firstFlagged
+                ? <>Priority today: revise <b>{firstFlagged.topic.title}</b> from <b>{firstFlagged.chapter.title}</b>.</>
+                : nextPending
+                  ? <>Start with <b>{nextPending.topic.title}</b> from <b>{nextPending.chapter.title}</b>. Flag difficult topics for revision.</>
+                  : <>Great work. All visible topics are complete. Add revision tasks or switch your class goal.</>}
+            </span>
           </div>
           <div className="filterChips">
             {['All', 'Pending', 'Completed', 'Flagged'].map((filter) => <button key={filter} className={statusFilter === filter ? 'active' : ''} onClick={() => setStatusFilter(filter)}>{filter}</button>)}
