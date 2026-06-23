@@ -3,7 +3,7 @@ import { Authenticator, ThemeProvider, createTheme } from '@aws-amplify/ui-react
 import { generateClient } from 'aws-amplify/api';
 import '@aws-amplify/ui-react/styles.css';
 import {
-  BookOpen, Bot, CalendarDays, CheckCircle2, ChevronDown, Circle, Clock, FileText,
+  BookOpen, Bot, CalendarDays, Check, CheckCircle2, ChevronDown, Circle, Clock, FileText,
   Home, LogOut, Moon, PenLine, Pi, Plus, Save, Search, Send, Sun, Target,
   Trash2, Trophy, UserRound, X, RotateCcw, Star
 } from 'lucide-react';
@@ -179,6 +179,72 @@ function localStudyFallback(question) {
   return `Your doubt: ${question}\n\nBest approach:\n1) Identify the chapter name.\n2) Revise formula/theory for 10 minutes.\n3) Review 5 solved examples.\n4) Solve 15 PYQs.\n5) Write the exact step where you got stuck and ask again.`;
 }
 
+
+function LandingPage({ onSignIn, onCreateAccount }) {
+  const categories = [
+    { title: 'JEE', detail: 'Topic tracker, PYQs, study timer', status: 'Active' },
+    { title: 'NEET', detail: 'PCB planner and progress tools', status: 'Coming soon' },
+    { title: 'Boards', detail: 'Class 9–12 study planning', status: 'Coming soon' },
+    { title: 'UPSC', detail: 'Long-term preparation roadmap', status: 'Coming soon' },
+  ];
+  const resources = [
+    { title: 'Topic Planner', detail: 'Chapter-wise topics with tick tracking.' },
+    { title: 'Study Timer', detail: 'Focus timer with start, pause and reset.' },
+    { title: 'Progress Dashboard', detail: 'Subject-wise and overall progress.' },
+  ];
+  return (
+    <main className="landing">
+      <nav className="landingNav">
+        <img src="/study-blueprint-logo.svg" alt="Study Blueprint" />
+        <div>
+          <button onClick={onSignIn} className="ghostBtn">Sign in</button>
+          <button onClick={onCreateAccount} className="primary">Get Started</button>
+        </div>
+      </nav>
+
+      <section className="landingHero">
+        <div className="heroCopy">
+          <span className="landingBadge">Plan • Track • Improve</span>
+          <h1>India’s smart study tracker for serious exam preparation.</h1>
+          <p>Study Blueprint helps students track syllabus topics, focus time, revision tasks, PYQs and progress in one clean dashboard.</p>
+          <div className="heroActions">
+            <button onClick={onCreateAccount} className="primary bigCta">Start Free</button>
+            <button onClick={onSignIn} className="outlineBtn">I already have an account</button>
+          </div>
+        </div>
+        <div className="heroVisual">
+          <div className="mockCard topMock"><b>Today’s Study Time</b><strong>02:30</strong><span>Focus timer ready</span></div>
+          <div className="mockCard midMock"><b>Physics</b><div className="mockBar"><i style={{ width: '42%' }} /></div><span>42% topics done</span></div>
+          <div className="mockCard lowMock"><b>Next topic</b><span>Electrostatics • Electric Field</span><button>Continue</button></div>
+        </div>
+      </section>
+
+      <section className="trustStrip">
+        <div><b>15M+</b><span>learning-inspired experience</span></div>
+        <div><b>3</b><span>core subjects</span></div>
+        <div><b>270+</b><span>planner topics loaded</span></div>
+        <div><b>Mobile</b><span>friendly dashboard</span></div>
+      </section>
+
+      <section className="landingSection">
+        <div className="sectionTitle"><h2>Study Resources</h2><p>A clean student workspace for everyday preparation.</p></div>
+        <div className="resourceGrid">{resources.map((item) => <article key={item.title}><div className="resourceIcon"><BookOpen size={24}/></div><h3>{item.title}</h3><p>{item.detail}</p></article>)}</div>
+      </section>
+
+      <section className="landingSection">
+        <div className="sectionTitle"><h2>Exam Categories</h2><p>JEE is active now. Other categories can be added later without changing the brand.</p></div>
+        <div className="categoryGrid">{categories.map((item) => <article key={item.title}><span>{item.status}</span><h3>{item.title}</h3><p>{item.detail}</p><button onClick={item.title === 'JEE' ? onCreateAccount : undefined}>{item.title === 'JEE' ? 'Explore Category' : 'Coming Soon'}</button></article>)}</div>
+      </section>
+
+      <section className="landingCta">
+        <h2>Build your preparation blueprint today.</h2>
+        <p>Create an account and start tracking real progress instead of guessing.</p>
+        <button onClick={onCreateAccount} className="primary bigCta">Get Started</button>
+      </section>
+    </main>
+  );
+}
+
 function AppShell({ user, signOut }) {
   const email = user?.signInDetails?.loginId || user?.attributes?.email || '';
   const storageKey = useMemo(() => makeStorageKey(user), [user]);
@@ -188,6 +254,8 @@ function AppShell({ user, signOut }) {
   const [editingProfile, setEditingProfile] = useState(false);
   const [newTask, setNewTask] = useState('');
   const [selectedPyq, setSelectedPyq] = useState(null);
+  const [streamMenuOpen, setStreamMenuOpen] = useState(false);
+  const streamOptions = ['11th IIT JEE', '12th IIT JEE', 'Dropper'];
   const [testScore, setTestScore] = useState({ name: '', score: '', total: '' });
   const [nowTick, setNowTick] = useState(Date.now());
 
@@ -423,7 +491,13 @@ function AppShell({ user, signOut }) {
   return (
     <div className={`app ${data.theme === 'dark' ? 'dark' : 'light'}`}>
       <aside className="sidebar">
-        <div className="brand"><img src="/study-blueprint-logo.svg" alt="Study Blueprint" /></div>
+        <div className="brand brandFull">
+          <img className="brandMark" src="/study-blueprint-icon.svg" alt="Study Blueprint" />
+          <div className="brandWords">
+            <div className="brandTitle">Study Blueprint</div>
+            <div className="brandLine">Plan • Track • Improve</div>
+          </div>
+        </div>
         {['LEARN', 'ASSESS', 'AI LEARNING', 'ACCOUNT'].map((group) => (
           <div className="navGroup" key={group}>
             <p>{group}</p>
@@ -439,7 +513,20 @@ function AppShell({ user, signOut }) {
       <main className="main">
         <header className="topbar">
           <div className="welcome">Welcome back, {displayName} 👋</div>
-          <div className="selectWrap"><select value={data.stream} onChange={(e) => update((current) => ({ ...current, stream: e.target.value }))}><option>11th IIT JEE</option><option>12th IIT JEE</option><option>Dropper</option></select><ChevronDown size={16} /></div>
+          <div className={`selectWrap customSelect ${streamMenuOpen ? 'open' : ''}`}>
+            <button type="button" className="selectButton" onClick={() => setStreamMenuOpen((value) => !value)} aria-expanded={streamMenuOpen}>
+              <span>{data.stream}</span><ChevronDown size={16} />
+            </button>
+            {streamMenuOpen && (
+              <div className="selectMenu">
+                {streamOptions.map((option) => (
+                  <button key={option} type="button" className={data.stream === option ? 'active' : ''} onClick={() => { update((current) => ({ ...current, stream: option })); setStreamMenuOpen(false); }}>
+                    <span>{option}</span>{data.stream === option && <Check size={15} />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="searchWrap"><Search size={17} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search chapters, topics, PYQs, notes..." /><kbd>Ctrl</kbd><kbd>K</kbd>{searchResults.length > 0 && <div className="searchResults">{searchResults.map((r, idx) => <button key={`${r.type}-${r.label}-${idx}`} onClick={() => setActive(r.page)}><span>{r.label}</span><small>{r.type}</small></button>)}</div>}</div>
           <div className="themeToggle"><button className={data.theme === 'light' ? 'active' : ''} onClick={() => update((current) => ({ ...current, theme: 'light' }))}><Sun size={15} /> Light</button><button className={data.theme === 'dark' ? 'active' : ''} onClick={() => update((current) => ({ ...current, theme: 'dark' }))}><Moon size={15} /> Dark</button></div>
           <button className="planBtn"><Trophy size={16} /> Free Plan</button>
@@ -633,15 +720,73 @@ function AiPage({ data, localStudyFallback }) {
 }
 
 function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setEditingProfile, saveProfile, signOut, resetLocalData }) {
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const fields = [
     ['fullName', 'Full Name', 'text'], ['mobile', 'Mobile No', 'text'], ['email', 'Email', 'text'], ['city', 'City / Village / Town', 'text'],
     ['className', 'Class', 'text'], ['board', 'Board / State Board', 'text'], ['targetExam', 'Target Exam Name', 'text'], ['targetDate', 'Target Exam Date', 'date'],
     ['language', 'Preferred Language', 'text'], ['studyGoal', 'Study Goal', 'text'], ['dailyStudyTime', 'Daily Study Time', 'text'], ['weakAreas', 'Weak Areas', 'text'], ['preferredContent', 'Preferred Content Type', 'text'],
   ];
   const left = daysLeft(data.profile.targetDate);
-  return <section className="page"><div className="pageHead"><h1>Profile</h1><p>Update the student name, exam target, and date here. Sign out is available here.</p></div><div className="profileHero"><div className="avatar">👨‍🎓</div><div><h2>{data.profile.fullName || 'Student Profile'}</h2><p>{data.profile.email || 'Email not available'}</p><span className="badge">{data.profile.targetExam || 'Target not set'}</span></div><div className="targetSummary"><b>{data.profile.targetDate ? formatDate(data.profile.targetDate) : 'Date not set'}</b><span>{left === null ? 'Set target date' : left >= 0 ? `${left} days left` : `${Math.abs(left)} days passed`}</span></div></div><div className="card profileTargetCard"><div><h3>Exam Target</h3><p className="muted">Set the exam name and target date here. Dashboard will only show study progress.</p></div><div className="targetForm"><label><span>Target Exam Name</span><input value={profileDraft.targetExam || ''} onChange={(e) => setProfileDraft({ ...profileDraft, targetExam: e.target.value })} placeholder="JEE Advanced 2027" /></label><label><span>Target Exam Date</span><input value={profileDraft.targetDate || ''} onChange={(e) => setProfileDraft({ ...profileDraft, targetDate: e.target.value })} type="date" /></label><button className="primary" onClick={saveProfile}><Save size={16}/> Save Target</button></div></div><div className="profileGrid"><div className="card wide"><div className="between"><h3>Profile Details</h3>{editingProfile ? <button onClick={saveProfile}><Save size={16}/> Save</button> : <button onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit</button>}</div><div className="detailsGrid">{fields.map(([key, label, type]) => <label key={key}><span>{label}</span>{editingProfile && key !== 'email' ? <input value={profileDraft[key] || ''} onChange={(e) => setProfileDraft({ ...profileDraft, [key]: e.target.value })} placeholder={`Enter ${label}`} type={type} /> : <b>{key === 'targetDate' && data.profile[key] ? formatDate(data.profile[key]) : data.profile[key] || '-'}</b>}</label>)}</div></div><div className="card actions"><h3>Account Actions</h3><button className="primary" onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit Profile</button>{editingProfile && <button onClick={saveProfile}><Save size={16}/> Save Changes</button>}<button className="danger" onClick={signOut}><LogOut size={16}/> Sign out</button><button onClick={resetLocalData}><RotateCcw size={16}/> Reset this browser data</button><div className="safeBox">🔒 Data is currently saved in this browser. Cloud sync can be added later.</div></div></div></section>;
+  return (
+    <section className="page">
+      <div className="pageHead"><h1>Profile</h1><p>Update the student name, exam target, and date here. Sign out is available here.</p></div>
+      <div className="profileHero"><div className="avatar">👨‍🎓</div><div><h2>{data.profile.fullName || 'Student Profile'}</h2><p>{data.profile.email || 'Email not available'}</p><span className="badge">{data.profile.targetExam || 'Target not set'}</span></div><div className="targetSummary"><b>{data.profile.targetDate ? formatDate(data.profile.targetDate) : 'Date not set'}</b><span>{left === null ? 'Set target date' : left >= 0 ? `${left} days left` : `${Math.abs(left)} days passed`}</span></div></div>
+      <div className="card profileTargetCard"><div><h3>Exam Target</h3><p className="muted">Set the exam name and target date here. Dashboard will only show study progress.</p></div><div className="targetForm"><label><span>Target Exam Name</span><input value={profileDraft.targetExam || ''} onChange={(e) => setProfileDraft({ ...profileDraft, targetExam: e.target.value })} placeholder="JEE Advanced 2027" /></label><label><span>Target Exam Date</span><input value={profileDraft.targetDate || ''} onChange={(e) => setProfileDraft({ ...profileDraft, targetDate: e.target.value })} type="date" /></label><button className="primary" onClick={saveProfile}><Save size={16}/> Save Target</button></div></div>
+      <div className="profileGrid"><div className="card wide"><div className="between"><h3>Profile Details</h3>{editingProfile ? <button onClick={saveProfile}><Save size={16}/> Save</button> : <button onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit</button>}</div><div className="detailsGrid">{fields.map(([key, label, type]) => <label key={key}><span>{label}</span>{editingProfile && key !== 'email' ? <input value={profileDraft[key] || ''} onChange={(e) => setProfileDraft({ ...profileDraft, [key]: e.target.value })} placeholder={`Enter ${label}`} type={type} /> : <b>{key === 'targetDate' && data.profile[key] ? formatDate(data.profile[key]) : data.profile[key] || '-'}</b>}</label>)}</div></div><div className="card actions"><h3>Account Actions</h3><button className="primary" onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit Profile</button>{editingProfile && <button onClick={saveProfile}><Save size={16}/> Save Changes</button>}<button className="danger" onClick={() => setShowLogoutConfirm(true)}><LogOut size={16}/> Sign out</button><button onClick={resetLocalData}><RotateCcw size={16}/> Reset this browser data</button><div className="safeBox">🔒 Data is currently saved in this browser. Cloud sync can be added later.</div></div></div>
+      {showLogoutConfirm && (
+        <div className="confirmOverlay" role="dialog" aria-modal="true">
+          <div className="confirmBox">
+            <h3>Confirm sign out</h3>
+            <p>Are you sure you want to sign out of Study Blueprint?</p>
+            <div className="confirmActions">
+              <button onClick={() => setShowLogoutConfirm(false)}>Cancel</button>
+              <button className="danger" onClick={() => { setShowLogoutConfirm(false); signOut?.(); }}>Yes, sign out</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
 }
 
+
 export default function App() {
-  return <ThemeProvider theme={uiTheme}><Authenticator>{({ signOut, user }) => <AppShell user={user} signOut={signOut} />}</Authenticator></ThemeProvider>;
+  const [authScreen, setAuthScreen] = useState(null);
+
+  if (!authScreen) {
+    return <LandingPage onSignIn={() => setAuthScreen('signIn')} onCreateAccount={() => setAuthScreen('signUp')} />;
+  }
+
+  return (
+    <ThemeProvider theme={uiTheme}>
+      <div className="authShell authShellModern">
+        <button className="backLanding" onClick={() => setAuthScreen(null)}>← Back to landing</button>
+        <div className="authPageGrid">
+          <section className="authBrandPanel">
+            <img className="authBrandLogo" src="/study-blueprint-logo.svg" alt="Study Blueprint" />
+            <span className="landingBadge">Plan • Track • Improve</span>
+            <h1>Build your preparation blueprint.</h1>
+            <p>Login to track topics, run a study timer, manage PYQs, and continue your JEE progress dashboard.</p>
+            <div className="authFeatureList">
+              <div><CheckCircle2 size={18} /><span>Topic-wise syllabus tracker</span></div>
+              <div><Clock size={18} /><span>Real focus timer</span></div>
+              <div><Target size={18} /><span>Exam target and progress dashboard</span></div>
+            </div>
+          </section>
+          <section className="authFormPanel">
+            <div className="authFormHeader">
+              <img src="/study-blueprint-icon.svg" alt="Study Blueprint icon" />
+              <div>
+                <h2>{authScreen === 'signUp' ? 'Create your account' : 'Welcome back'}</h2>
+                <p>{authScreen === 'signUp' ? 'Start tracking your study progress.' : 'Sign in to continue your dashboard.'}</p>
+              </div>
+            </div>
+            <Authenticator key={authScreen} initialState={authScreen}>
+              {({ signOut, user }) => <AppShell user={user} signOut={() => { signOut?.(); setAuthScreen(null); }} />}
+            </Authenticator>
+          </section>
+        </div>
+      </div>
+    </ThemeProvider>
+  );
 }

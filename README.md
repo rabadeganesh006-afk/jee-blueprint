@@ -1,3 +1,3 @@
-# Study Blueprint V17 Branding
+# Study Blueprint V21
 
-Study Blueprint rebrand with clean SVG logo, favicon, and updated AI title.
+Logo/sidebar branding size fixed. Larger Study Blueprint mark, clear title, readable tagline, landing logo improved.
