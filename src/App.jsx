@@ -84,14 +84,43 @@ const timeInputToMinutes = (value) => {
   return Math.max(1, total || DEFAULT_TIMER_MINUTES);
 };
 
-const PYQ_SETS = [
-  { id: 'current-electricity', title: 'Current Electricity', subject: 'Physics', questions: 25, difficulty: 'Medium' },
-  { id: 'rotation', title: 'Rotational Motion', subject: 'Physics', questions: 30, difficulty: 'High' },
-  { id: 'chemical-bonding', title: 'Chemical Bonding', subject: 'Chemistry', questions: 30, difficulty: 'High' },
-  { id: 'electrochemistry', title: 'Electrochemistry', subject: 'Chemistry', questions: 28, difficulty: 'Medium' },
-  { id: 'matrices', title: 'Matrices & Determinants', subject: 'Mathematics', questions: 22, difficulty: 'Medium' },
-  { id: 'integration', title: 'Integration', subject: 'Mathematics', questions: 35, difficulty: 'High' },
-];
+function slugify(value = '') {
+  return String(value)
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'chapter';
+}
+
+function chapterDifficulty(subject, chapterTitle = '', topicCount = 0) {
+  const title = chapterTitle.toLowerCase();
+  if (topicCount >= 18) return 'High';
+  if (subject === 'Mathematics' && /(integration|differential|vector|3d|complex|probability|conic)/.test(title)) return 'High';
+  if (subject === 'Physics' && /(rotation|electrostatics|current|magnet|waves|thermo|modern)/.test(title)) return 'High';
+  if (subject === 'Chemistry' && /(bonding|equilibrium|organic|coordination|electrochemistry|kinetics)/.test(title)) return 'High';
+  if (topicCount <= 5) return 'Easy';
+  return 'Medium';
+}
+
+function plannedQuestions(chapter) {
+  const count = chapter?.topics?.length || 1;
+  return Math.max(15, Math.min(60, count * 5));
+}
+
+function buildPyqSets(planner) {
+  const subjectOrder = { Physics: 1, Chemistry: 2, Mathematics: 3 };
+  return Object.entries(planner).flatMap(([subject, chapters]) =>
+    chapters.map((chapter) => ({
+      id: `pyq-${subject.toLowerCase()}-${chapter.id || slugify(chapter.title)}`,
+      title: chapter.title,
+      subject,
+      subSubject: chapter.subSubject || subject,
+      topicCount: chapter.topics?.length || 0,
+      questions: plannedQuestions(chapter),
+      difficulty: chapterDifficulty(subject, chapter.title, chapter.topics?.length || 0),
+    }))
+  ).sort((a, b) => (subjectOrder[a.subject] || 9) - (subjectOrder[b.subject] || 9) || a.title.localeCompare(b.title));
+}
 
 const MATERIALS = [
   { id: 'physics-formula', title: 'Physics Formula Sheet', subject: 'Physics', detail: 'Mechanics, electrostatics, optics and modern physics quick revision.' },
@@ -282,6 +311,7 @@ function AppShell({ user, signOut }) {
   const planner = useMemo(() => getPlannerForStream(data.stream), [data.stream]);
   const allTopics = useMemo(() => flattenTopics(planner), [planner]);
   const allChapters = useMemo(() => flattenChapters(planner), [planner]);
+  const pyqSets = useMemo(() => buildPyqSets(planner), [planner]);
   const doneCount = allTopics.filter(({ topic }) => data.topicsDone?.[topic.id]).length;
   const totalTopics = allTopics.length;
   const progressValue = percentNumber(doneCount, totalTopics);
@@ -289,7 +319,7 @@ function AppShell({ user, signOut }) {
   const liveTimerSeconds = getLiveTimerSeconds(normalizedTimer, nowTick);
   const manualTodayMinutes = Number(data.studyByDate?.[todayKey()] || 0);
   const todayMinutes = manualTodayMinutes + Math.floor(liveTimerSeconds / 60);
-  const pyqSolved = Object.values(data.pyqSolved || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+  const pyqSolved = pyqSets.reduce((sum, set) => sum + Number(data.pyqSolved?.[set.id] || 0), 0);
   const avgMinutes = (() => {
     const values = Object.values(data.studyByDate || {}).map(Number).filter((v) => v > 0);
     if (!values.length) return 0;
@@ -312,12 +342,13 @@ function AppShell({ user, signOut }) {
       .filter(({ subject, chapter, topic }) => `${subject} ${chapter.title} ${topic.title}`.toLowerCase().includes(q))
       .slice(0, 10)
       .map(({ subject, topic }) => ({ type: `${subject} Topic`, label: topic.title, page: 'dashboard' }));
-    const pyqHits = PYQ_SETS.filter((item) => `${item.title} ${item.subject}`.toLowerCase().includes(q))
-      .map((item) => ({ type: 'PYQ', label: item.title, page: 'pyq' }));
+    const pyqHits = pyqSets.filter((item) => `${item.title} ${item.subject} ${item.subSubject}`.toLowerCase().includes(q))
+      .slice(0, 10)
+      .map((item) => ({ type: `${item.subject} PYQ`, label: item.title, page: 'pyq' }));
     const materialHits = MATERIALS.filter((item) => `${item.title} ${item.subject}`.toLowerCase().includes(q))
       .map((item) => ({ type: 'Material', label: item.title, page: 'material' }));
     return [...pageHits, ...chapterHits, ...topicHits, ...pyqHits, ...materialHits].slice(0, 12);
-  }, [query, allChapters, allTopics]);
+  }, [query, allChapters, allTopics, pyqSets]);
 
   function setActive(active) { update((current) => ({ ...current, active })); }
 
@@ -438,7 +469,7 @@ function AppShell({ user, signOut }) {
   function clearActivities() { update((current) => ({ ...current, activities: [] })); }
 
   function markPyqSolved(setId, count = 1) {
-    const set = PYQ_SETS.find((item) => item.id === setId);
+    const set = pyqSets.find((item) => item.id === setId);
     update((current) => ({
       ...current,
       pyqSolved: { ...(current.pyqSolved || {}), [setId]: Math.min((current.pyqSolved?.[setId] || 0) + count, set?.questions || 999) },
@@ -534,7 +565,7 @@ function AppShell({ user, signOut }) {
         </header>
 
         {data.active === 'dashboard' && <Dashboard data={data} planner={planner} progressValue={progressValue} doneCount={doneCount} totalTopics={totalTopics} totalChapters={allChapters.length} todayMinutes={todayMinutes} liveTimerSeconds={liveTimerSeconds} pyqSolved={pyqSolved} avgMinutes={avgMinutes} startStudyTimer={startStudyTimer} pauseStudyTimer={pauseStudyTimer} resetStudyTimer={resetStudyTimer} toggleTopic={toggleTopic} toggleFlagTopic={toggleFlagTopic} addTask={addTask} newTask={newTask} setNewTask={setNewTask} toggleTask={toggleTask} deleteTask={deleteTask} deleteActivity={deleteActivity} clearActivities={clearActivities} setActive={setActive} query={query} />}
-        {data.active === 'pyq' && <PyqPage data={data} selectedPyq={selectedPyq} setSelectedPyq={setSelectedPyq} markPyqSolved={markPyqSolved} query={query} />}
+        {data.active === 'pyq' && <PyqPage data={data} stream={data.stream} pyqSets={pyqSets} selectedPyq={selectedPyq} setSelectedPyq={setSelectedPyq} markPyqSolved={markPyqSolved} query={query} />}
         {data.active === 'material' && <MaterialPage data={data} toggleMaterial={toggleMaterial} query={query} />}
         {data.active === 'tests' && <TestsPage data={data} testScore={testScore} setTestScore={setTestScore} saveTest={saveTest} />}
         {data.active === 'ai' && <AiPage data={data} localStudyFallback={localStudyFallback} />}
@@ -680,11 +711,38 @@ function Dashboard({ data, planner, progressValue, doneCount, totalTopics, total
   );
 }
 
-function PyqPage({ data, selectedPyq, setSelectedPyq, markPyqSolved, query }) {
+function PyqPage({ data, stream, pyqSets, selectedPyq, setSelectedPyq, markPyqSolved, query }) {
   const q = query.trim().toLowerCase();
-  const sets = q ? PYQ_SETS.filter((set) => `${set.title} ${set.subject}`.toLowerCase().includes(q)) : PYQ_SETS;
-  const current = PYQ_SETS.find((set) => set.id === selectedPyq);
-  return <section className="page"><div className="pageHead"><h1>PYQ Practice</h1><p>No fake count. The solved count increases only after you click “Mark 1 solved”.</p></div><div className="cards4">{sets.map((set) => <div className="card" key={set.id}><span className="badge">{set.subject}</span><h3>{set.title}</h3><p>{set.questions} questions planned</p><p>Difficulty: {set.difficulty}</p><button className="primary" onClick={() => setSelectedPyq(set.id)}>Open set</button></div>)}</div>{current && <div className="card mt"><h3>{current.title}</h3><p>Solved: {data.pyqSolved?.[current.id] || 0} / {current.questions}</p><div className="btnRow"><button onClick={() => markPyqSolved(current.id, 1)}>Mark 1 solved</button><button onClick={() => markPyqSolved(current.id, 5)}>+5 solved</button><button onClick={() => setSelectedPyq(null)}>Close</button></div></div>}</section>;
+  const sets = q ? pyqSets.filter((set) => `${set.title} ${set.subject} ${set.subSubject}`.toLowerCase().includes(q)) : pyqSets;
+  const current = pyqSets.find((set) => set.id === selectedPyq);
+  const subjectCounts = ['Physics', 'Chemistry', 'Mathematics'].map((subject) => ({
+    subject,
+    count: pyqSets.filter((set) => set.subject === subject).length,
+    solved: pyqSets.filter((set) => set.subject === subject).reduce((sum, set) => sum + Number(data.pyqSolved?.[set.id] || 0), 0),
+  }));
+  return <section className="page">
+    <div className="pageHead">
+      <h1>PYQ Practice</h1>
+      <p>All {stream} planner chapters are loaded here. Solved count increases only after you click “Mark 1 solved”.</p>
+    </div>
+    <div className="pyqSummaryStrip">
+      <div><b>{sets.length}</b><span>{q ? 'matching chapter sets' : 'chapter-wise PYQ sets'}</span></div>
+      {subjectCounts.map((item) => <div key={item.subject}><b>{item.count}</b><span>{item.subject} chapters</span><small>{item.solved} solved</small></div>)}
+    </div>
+    <div className="cards4 pyqChapterGrid">{sets.map((set) => {
+      const solved = Number(data.pyqSolved?.[set.id] || 0);
+      return <div className="card pyqChapterCard" key={set.id}>
+        <span className="badge">{set.subject}</span>
+        <h3>{set.title}</h3>
+        <p>{set.topicCount} planner topics linked</p>
+        <p>{set.questions} PYQs planned • {set.difficulty}</p>
+        <div className="smallProgress"><i style={{ width: `${Math.min(100, percentNumber(solved, set.questions))}%` }} /></div>
+        <small>{solved} / {set.questions} solved</small>
+        <button className="primary" onClick={() => setSelectedPyq(set.id)}>Open set</button>
+      </div>;
+    })}</div>
+    {current && <div className="card mt stickySetCard"><div><span className="badge">{current.subject}</span><h3>{current.title}</h3></div><p>Solved: {data.pyqSolved?.[current.id] || 0} / {current.questions}</p><div className="btnRow"><button onClick={() => markPyqSolved(current.id, 1)}>Mark 1 solved</button><button onClick={() => markPyqSolved(current.id, 5)}>+5 solved</button><button onClick={() => setSelectedPyq(null)}>Close</button></div></div>}
+  </section>;
 }
 
 function MaterialPage({ data, toggleMaterial, query }) {

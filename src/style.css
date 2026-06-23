@@ -1454,3 +1454,81 @@ summary span { color: var(--muted); font-size: 12px; }
   .statPills.interactivePills { grid-template-columns: 1fr; }
   .focusAlert { padding: 11px 12px; font-size: 13px; }
 }
+
+/* V25: chapter-wise PYQ practice library */
+.pyqSummaryStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 18px;
+}
+.pyqSummaryStrip > div {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 18px;
+  padding: 14px 16px;
+  box-shadow: var(--shadowSoft);
+  display: grid;
+  gap: 3px;
+}
+.pyqSummaryStrip b {
+  font-size: 24px;
+  letter-spacing: -0.8px;
+  color: var(--text);
+}
+.pyqSummaryStrip span,
+.pyqSummaryStrip small {
+  color: var(--muted);
+  font-weight: 750;
+}
+.pyqChapterGrid {
+  grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+}
+.pyqChapterCard {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-height: 250px;
+}
+.pyqChapterCard h3 {
+  min-height: 56px;
+  margin-bottom: 2px;
+}
+.pyqChapterCard .primary {
+  margin-top: auto;
+  align-self: flex-start;
+}
+.smallProgress {
+  height: 8px;
+  border-radius: 99px;
+  background: var(--softLine);
+  overflow: hidden;
+  margin: 3px 0;
+}
+.smallProgress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
+}
+.stickySetCard {
+  position: sticky;
+  bottom: 18px;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-color: rgba(37, 99, 235, .28);
+}
+.app.dark .smallProgress { background: rgba(148, 163, 184, .16); }
+.app.dark .pyqSummaryStrip > div { background: rgba(15, 23, 42, .72); }
+
+@media (max-width: 820px) {
+  .pyqSummaryStrip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stickySetCard { position: static; align-items: flex-start; flex-direction: column; }
+}
+@media (max-width: 520px) {
+  .pyqSummaryStrip { grid-template-columns: 1fr; }
+  .pyqChapterCard h3 { min-height: auto; }
+}
