@@ -263,7 +263,7 @@ function LandingPage({ onSignIn, onCreateAccount }) {
       </section>
 
       <section className="trustStrip">
-        <div><b>Smart</b><span>Learning Experience</span></div>
+        <div><b>15M+</b><span>learning-inspired experience</span></div>
         <div><b>3</b><span>core subjects</span></div>
         <div><b>270+</b><span>planner topics loaded</span></div>
         <div><b>Mobile</b><span>friendly dashboard</span></div>

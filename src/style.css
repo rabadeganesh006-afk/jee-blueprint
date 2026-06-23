@@ -1591,3 +1591,64 @@ summary span { color: var(--muted); font-size: 12px; }
   .pyqSubjectSection { padding: 14px; border-radius: 18px; }
   .subjectSectionHead { align-items: flex-start; flex-direction: column; }
 }
+
+/* V27: Contact Us section/page */
+.landingContactSection {
+  width: min(1120px, calc(100% - 44px));
+  margin: 0 auto 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 22px;
+  align-items: stretch;
+  padding: 28px;
+  border-radius: 30px;
+  border: 1px solid rgba(37,99,235,.14);
+  background: linear-gradient(135deg, rgba(37,99,235,.08), rgba(255,255,255,.94));
+  box-shadow: 0 24px 60px rgba(15,23,42,.08);
+}
+.landingContactCopy h2 { margin: 18px 0 12px; font-size: clamp(30px, 4vw, 52px); line-height: 1.03; letter-spacing: -1.4px; color: #0f172a; }
+.landingContactCopy p { color: #64748b; font-size: 17px; line-height: 1.7; max-width: 620px; }
+.contactTrustLine { margin-top: 18px; display: inline-flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 999px; background: #eef6ff; color: #1d4ed8; font-weight: 850; }
+.landingContactForm { display: grid; gap: 12px; padding: 18px; border: 1px solid #dbe7ff; border-radius: 24px; background: rgba(255,255,255,.95); }
+.landingContactForm input, .landingContactForm textarea { width: 100%; border: 1px solid #dbe3ef; border-radius: 14px; padding: 13px 14px; background: white; color: #0f172a; outline: none; resize: vertical; }
+.landingContactForm button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.contactStatus { color: #2563eb; font-weight: 800; }
+.contactHeroHead { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.contactHeroBadge { display: inline-flex; align-items: center; gap: 10px; padding: 11px 14px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); color: var(--blue); font-weight: 850; box-shadow: var(--shadow); white-space: nowrap; }
+.contactLayout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+.contactForm { display: grid; gap: 14px; }
+.contactForm h3 { margin: 0; font-size: 24px; }
+.mutedText { color: var(--muted); margin: 0; line-height: 1.6; }
+.formGrid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.contactForm label { display: grid; gap: 7px; color: var(--muted); font-weight: 850; }
+.contactForm input, .contactForm select, .contactForm textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--soft);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 12px 14px;
+  outline: none;
+  resize: vertical;
+}
+.contactForm button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: fit-content; }
+.contactStatusBox { padding: 12px 14px; border-radius: 14px; background: rgba(37,99,235,.09); color: var(--blue); font-weight: 850; }
+.contactSideStack { display: grid; gap: 16px; }
+.contactInfoCard { display: grid; gap: 10px; }
+.contactInfoCard svg { color: var(--blue); }
+.contactInfoCard h3 { margin: 0; }
+.contactInfoCard p { margin: 0; color: var(--muted); line-height: 1.6; }
+.contactInfoCard.safe { background: linear-gradient(135deg, rgba(16,185,129,.10), var(--panel)); }
+.contactInfoCard.safe svg { color: #10b981; }
+.contactMiniMsg { display: grid; gap: 3px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.contactMiniMsg:last-child { border-bottom: 0; }
+.contactMiniMsg span, .contactMiniMsg small { color: var(--muted); }
+.app.dark .landingContactSection { background: linear-gradient(135deg, rgba(37,99,235,.16), rgba(11,22,38,.95)); border-color: #203047; }
+.app.dark .landingContactCopy h2 { color: #f8fafc; }
+.app.dark .landingContactForm { background: #0b1626; border-color: #203047; }
+.app.dark .landingContactForm input, .app.dark .landingContactForm textarea { background: #07111f; border-color: #203047; color: #f8fafc; }
+@media (max-width: 900px) {
+  .landingContactSection, .contactLayout, .formGrid2 { grid-template-columns: 1fr; }
+  .contactHeroHead { align-items: flex-start; flex-direction: column; }
+  .landingContactSection { width: min(100% - 28px, 1120px); padding: 20px; border-radius: 24px; }
+}
