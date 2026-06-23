@@ -127,6 +127,7 @@ const defaultData = (email = '') => ({
     dailyStudyTime: '',
     weakAreas: '',
     preferredContent: 'Video lectures, Notes, PYQs',
+    avatarDataUrl: '',
   }
 });
 
@@ -723,16 +724,78 @@ function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setE
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const fields = [
     ['fullName', 'Full Name', 'text'], ['mobile', 'Mobile No', 'text'], ['email', 'Email', 'text'], ['city', 'City / Village / Town', 'text'],
-    ['className', 'Class', 'text'], ['board', 'Board / State Board', 'text'], ['targetExam', 'Target Exam Name', 'text'], ['targetDate', 'Target Exam Date', 'date'],
-    ['language', 'Preferred Language', 'text'], ['studyGoal', 'Study Goal', 'text'], ['dailyStudyTime', 'Daily Study Time', 'text'], ['weakAreas', 'Weak Areas', 'text'], ['preferredContent', 'Preferred Content Type', 'text'],
+    ['className', 'Class', 'text'], ['board', 'Board / State Board', 'text'], ['language', 'Preferred Language', 'text'],
+    ['studyGoal', 'Study Goal', 'text'], ['dailyStudyTime', 'Daily Study Time', 'text'], ['weakAreas', 'Weak Areas', 'text'], ['preferredContent', 'Preferred Content Type', 'text'],
   ];
   const left = daysLeft(data.profile.targetDate);
+  const avatarUrl = profileDraft.avatarDataUrl || data.profile.avatarDataUrl || '';
+
+  function handleAvatarUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProfileDraft({ ...profileDraft, avatarDataUrl: reader.result });
+      setEditingProfile(true);
+    };
+    reader.readAsDataURL(file);
+  }
+
   return (
-    <section className="page">
-      <div className="pageHead"><h1>Profile</h1><p>Update the student name, exam target, and date here. Sign out is available here.</p></div>
-      <div className="profileHero"><div className="avatar">👨‍🎓</div><div><h2>{data.profile.fullName || 'Student Profile'}</h2><p>{data.profile.email || 'Email not available'}</p><span className="badge">{data.profile.targetExam || 'Target not set'}</span></div><div className="targetSummary"><b>{data.profile.targetDate ? formatDate(data.profile.targetDate) : 'Date not set'}</b><span>{left === null ? 'Set target date' : left >= 0 ? `${left} days left` : `${Math.abs(left)} days passed`}</span></div></div>
-      <div className="card profileTargetCard"><div><h3>Exam Target</h3><p className="muted">Set the exam name and target date here. Dashboard will only show study progress.</p></div><div className="targetForm"><label><span>Target Exam Name</span><input value={profileDraft.targetExam || ''} onChange={(e) => setProfileDraft({ ...profileDraft, targetExam: e.target.value })} placeholder="JEE Advanced 2027" /></label><label><span>Target Exam Date</span><input value={profileDraft.targetDate || ''} onChange={(e) => setProfileDraft({ ...profileDraft, targetDate: e.target.value })} type="date" /></label><button className="primary" onClick={saveProfile}><Save size={16}/> Save Target</button></div></div>
-      <div className="profileGrid"><div className="card wide"><div className="between"><h3>Profile Details</h3>{editingProfile ? <button onClick={saveProfile}><Save size={16}/> Save</button> : <button onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit</button>}</div><div className="detailsGrid">{fields.map(([key, label, type]) => <label key={key}><span>{label}</span>{editingProfile && key !== 'email' ? <input value={profileDraft[key] || ''} onChange={(e) => setProfileDraft({ ...profileDraft, [key]: e.target.value })} placeholder={`Enter ${label}`} type={type} /> : <b>{key === 'targetDate' && data.profile[key] ? formatDate(data.profile[key]) : data.profile[key] || '-'}</b>}</label>)}</div></div><div className="card actions"><h3>Account Actions</h3><button className="primary" onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit Profile</button>{editingProfile && <button onClick={saveProfile}><Save size={16}/> Save Changes</button>}<button className="danger" onClick={() => setShowLogoutConfirm(true)}><LogOut size={16}/> Sign out</button><button onClick={resetLocalData}><RotateCcw size={16}/> Reset this browser data</button><div className="safeBox">🔒 Data is currently saved in this browser. Cloud sync can be added later.</div></div></div>
+    <section className="page profilePageV23">
+      <div className="pageHead"><h1>Profile</h1><p>Manage student details, exam target, profile photo and account settings.</p></div>
+
+      <div className="profileHero profileHeroV23">
+        <div className="profileIdentityBlock">
+          <div className="profilePhotoWrap">
+            {avatarUrl ? <img src={avatarUrl} alt="Student profile" /> : <div className="avatar profileAvatarFallback">👨‍🎓</div>}
+            <label className="photoUploadBtn" title="Add or change profile photo">
+              <PenLine size={15} />
+              <input type="file" accept="image/*" onChange={handleAvatarUpload} />
+            </label>
+          </div>
+          <div className="profileIdentityText">
+            <h2>{data.profile.fullName || 'Student Profile'}</h2>
+            <p>{data.profile.email || 'Email not available'}</p>
+            <span className="badge">{data.profile.targetExam || 'Target not set'}</span>
+          </div>
+        </div>
+
+        <div className="profileFutureCard">
+          <div className="futureGraphic" aria-hidden="true">
+            <span className="rocketShape">🚀</span>
+            <i></i><i></i><i></i>
+          </div>
+          <div>
+            <h3>Keep building your future</h3>
+            <p>Complete your profile to get a cleaner dashboard, better target tracking and personalized study planning.</p>
+          </div>
+        </div>
+
+        <div className="targetSummary targetSummaryV23">
+          <span>Target Date</span>
+          <b>{data.profile.targetDate ? formatDate(data.profile.targetDate) : 'Date not set'}</b>
+          <small>{left === null ? 'Set target date' : left >= 0 ? `${left} days left` : `${Math.abs(left)} days passed`}</small>
+        </div>
+      </div>
+
+      <div className="card profileTargetCard profileTargetV23">
+        <div><h3>Exam Target</h3><p className="muted">Set the target exam name and date here. The dashboard will use this target for tracking.</p></div>
+        <div className="targetForm"><label><span>Target Exam Name</span><input value={profileDraft.targetExam || ''} onChange={(e) => setProfileDraft({ ...profileDraft, targetExam: e.target.value })} placeholder="JEE Advanced 2027" /></label><label><span>Target Exam Date</span><input value={profileDraft.targetDate || ''} onChange={(e) => setProfileDraft({ ...profileDraft, targetDate: e.target.value })} type="date" /></label><button className="primary" onClick={saveProfile}><Save size={16}/> Save Target</button></div>
+      </div>
+
+      <div className="profileGrid profileGridV23">
+        <div className="card wide">
+          <div className="between"><h3>Personal & Academic Details</h3>{editingProfile ? <button onClick={saveProfile}><Save size={16}/> Save</button> : <button onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit</button>}</div>
+          <div className="detailsGrid detailsGridV23">{fields.map(([key, label, type]) => <label key={key}><span>{label}</span>{editingProfile && key !== 'email' ? <input value={profileDraft[key] || ''} onChange={(e) => setProfileDraft({ ...profileDraft, [key]: e.target.value })} placeholder={`Enter ${label}`} type={type} /> : <b>{data.profile[key] || '-'}</b>}</label>)}</div>
+        </div>
+        <div className="profileSideStack">
+          <div className="card actions actionsV23"><h3>Account Actions</h3><button className="primary" onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit Profile</button>{editingProfile && <button onClick={saveProfile}><Save size={16}/> Save Changes</button>}<button className="danger" onClick={() => setShowLogoutConfirm(true)}><LogOut size={16}/> Sign out</button><button onClick={resetLocalData}><RotateCcw size={16}/> Reset this browser data</button></div>
+          <div className="safeBox safeBoxV23"><b>Your data is safe with us</b><span>We do not sell your personal information. Your study progress stays private inside your account/browser setup.</span></div>
+        </div>
+      </div>
+
       {showLogoutConfirm && (
         <div className="confirmOverlay" role="dialog" aria-modal="true">
           <div className="confirmBox">

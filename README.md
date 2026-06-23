@@ -1,3 +1,3 @@
-# Study Blueprint V22
+# Study Blueprint V23
 
-Logo/sidebar branding size fixed. Larger Study Blueprint mark, clear title, readable tagline, landing logo improved.
+Profile/dashboard polish, profile image upload, safe data panel, dark/light theme styling, and exam target section retained in Profile.
