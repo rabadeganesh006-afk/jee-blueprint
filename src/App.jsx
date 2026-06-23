@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Authenticator, ThemeProvider, createTheme } from '@aws-amplify/ui-react';
+import { Authenticator, ThemeProvider, createTheme, useAuthenticator } from '@aws-amplify/ui-react';
 import { generateClient } from 'aws-amplify/api';
 import '@aws-amplify/ui-react/styles.css';
 import {
@@ -750,43 +750,55 @@ function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setE
 }
 
 
-export default function App() {
-  const [authScreen, setAuthScreen] = useState(null);
+function AuthLayout({ authScreen, setAuthScreen }) {
+  const { route, user, signOut } = useAuthenticator((context) => [context.route, context.user]);
+
+  if (route === 'authenticated' && user) {
+    return <AppShell user={user} signOut={() => { signOut?.(); setAuthScreen(null); }} />;
+  }
 
   if (!authScreen) {
     return <LandingPage onSignIn={() => setAuthScreen('signIn')} onCreateAccount={() => setAuthScreen('signUp')} />;
   }
 
   return (
-    <ThemeProvider theme={uiTheme}>
-      <div className="authShell authShellModern">
-        <button className="backLanding" onClick={() => setAuthScreen(null)}>← Back to landing</button>
-        <div className="authPageGrid">
-          <section className="authBrandPanel">
-            <img className="authBrandLogo" src="/study-blueprint-logo.svg" alt="Study Blueprint" />
-            <span className="landingBadge">Plan • Track • Improve</span>
-            <h1>Build your preparation blueprint.</h1>
-            <p>Login to track topics, run a study timer, manage PYQs, and continue your JEE progress dashboard.</p>
-            <div className="authFeatureList">
-              <div><CheckCircle2 size={18} /><span>Topic-wise syllabus tracker</span></div>
-              <div><Clock size={18} /><span>Real focus timer</span></div>
-              <div><Target size={18} /><span>Exam target and progress dashboard</span></div>
+    <div className="authShell authShellModern">
+      <button className="backLanding" onClick={() => setAuthScreen(null)}>← Back to landing</button>
+      <div className="authPageGrid">
+        <section className="authBrandPanel">
+          <img className="authBrandLogo" src="/study-blueprint-logo.svg" alt="Study Blueprint" />
+          <span className="landingBadge">Plan • Track • Improve</span>
+          <h1>Build your preparation blueprint.</h1>
+          <p>Login to track topics, run a study timer, manage PYQs, and continue your JEE progress dashboard.</p>
+          <div className="authFeatureList">
+            <div><CheckCircle2 size={18} /><span>Topic-wise syllabus tracker</span></div>
+            <div><Clock size={18} /><span>Real focus timer</span></div>
+            <div><Target size={18} /><span>Exam target and progress dashboard</span></div>
+          </div>
+        </section>
+        <section className="authFormPanel">
+          <div className="authFormHeader">
+            <img src="/study-blueprint-icon.svg" alt="Study Blueprint icon" />
+            <div>
+              <h2>{authScreen === 'signUp' ? 'Create your account' : 'Welcome back'}</h2>
+              <p>{authScreen === 'signUp' ? 'Start tracking your study progress.' : 'Sign in to continue your dashboard.'}</p>
             </div>
-          </section>
-          <section className="authFormPanel">
-            <div className="authFormHeader">
-              <img src="/study-blueprint-icon.svg" alt="Study Blueprint icon" />
-              <div>
-                <h2>{authScreen === 'signUp' ? 'Create your account' : 'Welcome back'}</h2>
-                <p>{authScreen === 'signUp' ? 'Start tracking your study progress.' : 'Sign in to continue your dashboard.'}</p>
-              </div>
-            </div>
-            <Authenticator key={authScreen} initialState={authScreen}>
-              {({ signOut, user }) => <AppShell user={user} signOut={() => { signOut?.(); setAuthScreen(null); }} />}
-            </Authenticator>
-          </section>
-        </div>
+          </div>
+          <Authenticator key={authScreen} initialState={authScreen} />
+        </section>
       </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const [authScreen, setAuthScreen] = useState(null);
+
+  return (
+    <ThemeProvider theme={uiTheme}>
+      <Authenticator.Provider>
+        <AuthLayout authScreen={authScreen} setAuthScreen={setAuthScreen} />
+      </Authenticator.Provider>
     </ThemeProvider>
   );
 }
