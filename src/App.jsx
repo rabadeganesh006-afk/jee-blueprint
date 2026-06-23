@@ -325,7 +325,6 @@ function LandingPage({ onSignIn, onCreateAccount, onOpenLegal }) {
         <span>© 2026 Study Blueprint. Created by Ganesh Rabade.</span>
         <div>
           <button onClick={() => onOpenLegal('privacy')}>Privacy Policy</button>
-          <button onClick={() => onOpenLegal('terms')}>Terms</button>
           <button onClick={() => onOpenLegal('deleteData')}>Delete My Data</button>
           <button onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}>Contact</button>
         </div>
@@ -338,28 +337,8 @@ function LandingPage({ onSignIn, onCreateAccount, onOpenLegal }) {
 const legalUpdatedDate = '23 June 2026';
 
 function LegalContent({ type, inApp = false, onBack, onRequestDelete, onClearBrowserData }) {
-  const pageTitle = type === 'terms' ? 'Terms & Conditions' : type === 'deleteData' ? 'Delete My Data' : 'Privacy Policy';
+  const pageTitle = type === 'deleteData' ? 'Delete My Data' : 'Privacy Policy';
 
-  if (type === 'terms') {
-    return (
-      <section className={inApp ? 'page legalPage' : 'legalPublicPage'}>
-        <div className="legalHeader">
-          {onBack && <button className="outlineBtn" onClick={onBack}>← Back</button>}
-          <span className="landingBadge">Study Blueprint Legal</span>
-          <h1>{pageTitle}</h1>
-          <p>Last updated: {legalUpdatedDate}</p>
-        </div>
-        <div className="legalCardStack">
-          <article className="card legalCard"><h3>1. Educational purpose</h3><p>Study Blueprint is a study planning and progress-tracking tool. It helps students organize topics, PYQs, tasks, target dates and study time. It does not guarantee rank, marks, selection, admission, scholarship or exam success.</p></article>
-          <article className="card legalCard"><h3>2. Student responsibility</h3><p>Students should enter accurate study progress and use the dashboard as a personal planning tool. Final preparation decisions, exam registration, official dates and official instructions must be checked from official exam websites.</p></article>
-          <article className="card legalCard"><h3>3. Account use</h3><p>You are responsible for keeping your login details private. Do not share passwords, OTPs, API keys, payment details or other sensitive information through the app or contact form.</p></article>
-          <article className="card legalCard"><h3>4. Content and copyright</h3><p>Do not upload or submit copyrighted notes, paid coaching PDFs, private lectures, teacher photos, watermarked material or content you do not have permission to use. Public PYQ tracking and original explanations are preferred.</p></article>
-          <article className="card legalCard"><h3>5. Changes and availability</h3><p>The app is currently an MVP/demo and features may change. Some features may be improved, removed, renamed or moved while the product is being developed.</p></article>
-          <article className="card legalCard"><h3>6. Contact</h3><p>For support, feedback, business enquiry or data deletion request, use the Contact Us or Delete My Data section.</p></article>
-        </div>
-      </section>
-    );
-  }
 
   if (type === 'deleteData') {
     return (
@@ -396,12 +375,10 @@ function LegalContent({ type, inApp = false, onBack, onRequestDelete, onClearBro
         <p>Last updated: {legalUpdatedDate}</p>
       </div>
       <div className="legalCardStack">
-        <article className="card legalCard"><h3>What we collect</h3><p>Study Blueprint may collect basic study-related information such as your name, email, class/stream, target exam, target date, city, preferred language, study goal, topic progress, flagged topics, study timer activity, PYQ progress, tasks, test scores, profile photo and contact messages.</p></article>
-        <article className="card legalCard"><h3>What we do not need</h3><p>We do not need your home address, school ID, parent details, payment card details, OTPs, passwords, private documents or sensitive personal information for the current demo/MVP.</p></article>
-        <article className="card legalCard"><h3>How we use data</h3><p>We use the data to show your dashboard, personalize your study progress, save your profile, track your target date, answer support messages and improve the app experience.</p></article>
-        <article className="card legalCard"><h3>Where data is saved</h3><p>Login is handled using AWS Amplify/Auth. Some profile and study-progress data may currently be saved in your browser localStorage in this MVP version. Contact form messages are sent to the support inbox configured by the project owner.</p></article>
-        <article className="card legalCard"><h3>Sharing and selling data</h3><p>We do not sell student personal information. If the app is customized for a coaching/class, only the required student-study data should be shared with the authorized admin according to the agreed setup.</p></article>
-        <article className="card legalCard"><h3>Security note</h3><p>The app uses HTTPS and secure login, but a full production security audit, real database access rules, admin roles and full data-deletion automation are planned improvements. Avoid sharing sensitive information.</p></article>
+        <article className="card legalCard"><h3>What we collect</h3><p>Study Blueprint asks for only the basic details needed to personalize your dashboard: name, email, class, exam target, target date, preferred language, study goal, topic progress, PYQ progress, study timer activity and support messages.</p></article>
+        <article className="card legalCard"><h3>What we never ask for</h3><p>Please do not share passwords, OTPs, payment card details, home address, private documents or any sensitive personal information inside the app or contact form.</p></article>
+        <article className="card legalCard"><h3>How we use data</h3><p>Your details are used to show your study dashboard, save your profile, track your target date, record progress, answer support messages and improve the app experience.</p></article>
+        <article className="card legalCard"><h3>Sharing and selling data</h3><p>We do not sell student personal information. For a customized coaching/class version, only the required study-progress data should be visible to the authorized class admin.</p></article>
         <article className="card legalCard"><h3>Your choices</h3><p>You can update your profile, clear browser data, request deletion, or contact support for corrections. Use the Delete My Data page for deletion requests.</p></article>
       </div>
     </section>
@@ -512,7 +489,7 @@ function AppShell({ user, signOut }) {
     if (!q) return [];
     const pageHits = [
       ['dashboard', 'Dashboard'], ['pyq', 'PYQ Practice'], ['material', 'Study Material'],
-      ['tests', 'Test Series'], ['ai', 'AI Tutor'], ['contact', 'Contact Us'], ['privacy', 'Privacy Policy'], ['terms', 'Terms'], ['deleteData', 'Delete My Data'], ['profile', 'Profile']
+      ['tests', 'Test Series'], ['ai', 'AI Tutor'], ['contact', 'Contact Us'], ['privacy', 'Privacy Policy'], ['deleteData', 'Delete My Data'], ['profile', 'Profile']
     ].filter(([, label]) => label.toLowerCase().includes(q)).map(([page, label]) => ({ type: 'Page', label, page }));
     const chapterHits = allChapters
       .filter(({ subject, chapter }) => `${subject} ${chapter.title} ${chapter.subSubject}`.toLowerCase().includes(q))
@@ -700,7 +677,6 @@ function AppShell({ user, signOut }) {
     { id: 'contact', label: 'Contact Us', group: 'ACCOUNT', icon: Mail },
     { id: 'profile', label: 'Profile', group: 'ACCOUNT', icon: UserRound },
     { id: 'privacy', label: 'Privacy Policy', group: 'LEGAL', icon: ShieldCheck },
-    { id: 'terms', label: 'Terms', group: 'LEGAL', icon: FileText },
     { id: 'deleteData', label: 'Delete My Data', group: 'LEGAL', icon: Trash2 },
   ];
 
@@ -755,7 +731,6 @@ function AppShell({ user, signOut }) {
         {data.active === 'ai' && <AiPage data={data} localStudyFallback={localStudyFallback} />}
         {data.active === 'contact' && <ContactPage data={data} />}
         {data.active === 'privacy' && <LegalContent type="privacy" inApp />}
-        {data.active === 'terms' && <LegalContent type="terms" inApp />}
         {data.active === 'deleteData' && <LegalContent type="deleteData" inApp onClearBrowserData={resetLocalData} />}
         {data.active === 'profile' && <ProfilePage data={data} profileDraft={profileDraft} setProfileDraft={setProfileDraft} editingProfile={editingProfile} setEditingProfile={setEditingProfile} saveProfile={saveProfile} signOut={signOut} resetLocalData={resetLocalData} />}
       </main>
@@ -1160,7 +1135,7 @@ function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setE
         </div>
         <div className="profileSideStack">
           <div className="card actions actionsV23"><h3>Account Actions</h3><button className="primary" onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit Profile</button>{editingProfile && <button onClick={saveProfile}><Save size={16}/> Save Changes</button>}<button className="danger" onClick={() => setShowLogoutConfirm(true)}><LogOut size={16}/> Sign out</button><button onClick={resetLocalData}><RotateCcw size={16}/> Reset this browser data</button></div>
-          <div className="safeBox safeBoxV23"><b>We respect your privacy</b><span>We collect only basic study details needed for your dashboard. Do not share passwords, OTPs or private documents.</span></div>
+          <div className="safeBox safeBoxV23"><b>Privacy first</b><span>We ask only for basic study details needed for your dashboard. Never share passwords, OTPs, payment details or private documents.</span></div>
         </div>
       </div>
 
