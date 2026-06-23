@@ -349,17 +349,19 @@ function LegalContent({ type, inApp = false, onBack, onRequestDelete, onClearBro
           <h1>{pageTitle}</h1>
           <p>Request deletion of your Study Blueprint data or clear data saved in this browser.</p>
         </div>
-        <div className="legalTwoCol">
+        <div className={inApp ? 'legalTwoCol' : 'legalOneCol'}>
           <article className="card legalCard">
             <h3>What can be deleted?</h3>
             <p>You can request deletion of basic profile and study-tracking data connected to your account, such as name, class, target exam, target date, topic progress, tasks, study time, PYQ progress and uploaded profile photo where applicable.</p>
-            <p>Some contact records may be kept for a limited time only to respond to support/business messages and prevent misuse.</p>
+            <p>Use the form below with the same email used for Study Blueprint so the request can be matched correctly.</p>
           </article>
-          <article className="card legalCard">
-            <h3>Clear this browser data</h3>
-            <p>This removes local Study Blueprint data saved in this browser. It does not delete your login account from AWS Amplify/Auth.</p>
-            {onClearBrowserData ? <button className="danger" onClick={onClearBrowserData}><Trash2 size={16}/> Clear browser data</button> : <p className="muted">Sign in and open Profile or Delete My Data to clear browser data.</p>}
-          </article>
+          {inApp && (
+            <article className="card legalCard">
+              <h3>Clear this browser data</h3>
+              <p>This removes local Study Blueprint data saved in this browser. It does not delete your login account from AWS Amplify/Auth.</p>
+              {onClearBrowserData && <button className="danger" onClick={onClearBrowserData}><Trash2 size={16}/> Clear browser data</button>}
+            </article>
+          )}
         </div>
         <DeleteRequestForm onSubmitted={onRequestDelete} />
       </section>
@@ -429,7 +431,15 @@ function DeleteRequestForm({ onSubmitted }) {
 }
 
 function LegalPublicPage({ type, onBack }) {
-  return <main className="landing legalPublicShell"><LegalContent type={type} onBack={onBack} /></main>;
+  return (
+    <main className="landing legalPublicShell">
+      <div className="legalPublicTop">
+        <img src="/study-blueprint-logo.svg" alt="Study Blueprint" />
+        <button className="outlineBtn" onClick={onBack}>← Back to home</button>
+      </div>
+      <LegalContent type={type} />
+    </main>
+  );
 }
 
 function AppShell({ user, signOut }) {
@@ -1191,7 +1201,7 @@ function AuthLayout({ authScreen, setAuthScreen, publicPage, setPublicPage }) {
               <p>{authScreen === 'signUp' ? 'Start tracking your study progress.' : 'Sign in to continue your dashboard.'}</p>
             </div>
           </div>
-          <Authenticator key={authScreen} initialState={authScreen} />
+          <Authenticator key={authScreen} initialState={authScreen} loginMechanisms={['email']} hideSignUp={authScreen === 'signIn'} />
         </section>
       </div>
     </div>
