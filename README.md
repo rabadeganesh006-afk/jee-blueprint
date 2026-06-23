@@ -6,3 +6,6 @@ Fixes included:
 - Chapters keep the same order as the 11th/12th lecture planner data.
 - Dropper still shows the combined 11th + 12th chapters.
 - Search still works inside PYQ chapters.
+
+
+V28 update: Contact Us forms now send messages through Formspree endpoint https://formspree.io/f/mgojvzjn. Landing stats updated to Smart Learning Experience.

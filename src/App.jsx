@@ -215,14 +215,34 @@ function localStudyFallback(question) {
 function LandingPage({ onSignIn, onCreateAccount }) {
   const [contactStatus, setContactStatus] = useState('');
   const [landingContact, setLandingContact] = useState({ name: '', email: '', message: '' });
-  const submitLandingContact = (event) => {
+  const [landingSending, setLandingSending] = useState(false);
+  const submitLandingContact = async (event) => {
     event.preventDefault();
     if (!landingContact.name.trim() || !landingContact.email.trim() || !landingContact.message.trim()) {
       setContactStatus('Please fill name, email and message.');
       return;
     }
-    setContactStatus('Message saved for demo. Connect email backend before production.');
-    setLandingContact({ name: '', email: '', message: '' });
+    setLandingSending(true);
+    setContactStatus('Sending your message...');
+    try {
+      const response = await fetch('https://formspree.io/f/mgojvzjn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          source: 'Landing page contact form',
+          name: landingContact.name,
+          email: landingContact.email,
+          message: landingContact.message,
+        }),
+      });
+      if (!response.ok) throw new Error('Formspree request failed');
+      setContactStatus('Message sent successfully. We will reply soon.');
+      setLandingContact({ name: '', email: '', message: '' });
+    } catch (error) {
+      setContactStatus('Message could not be sent right now. Please try again after some time.');
+    } finally {
+      setLandingSending(false);
+    }
   };
   const categories = [
     { title: 'JEE', detail: 'Topic tracker, PYQs, study timer', status: 'Active' },
@@ -290,7 +310,7 @@ function LandingPage({ onSignIn, onCreateAccount }) {
           <input value={landingContact.name} onChange={(e) => setLandingContact({ ...landingContact, name: e.target.value })} placeholder="Your name" />
           <input value={landingContact.email} onChange={(e) => setLandingContact({ ...landingContact, email: e.target.value })} placeholder="Email address" />
           <textarea value={landingContact.message} onChange={(e) => setLandingContact({ ...landingContact, message: e.target.value })} placeholder="Tell us what you need..." rows={4} />
-          <button className="primary" type="submit"><Send size={16} /> Send message</button>
+          <button className="primary" type="submit" disabled={landingSending}><Send size={16} /> {landingSending ? 'Sending...' : 'Send message'}</button>
           {contactStatus && <small className="contactStatus">{contactStatus}</small>}
         </form>
       </section>
@@ -843,22 +863,43 @@ function AiPage({ data, localStudyFallback }) {
 function ContactPage({ data }) {
   const [form, setForm] = useState({ name: data.profile?.fullName || '', email: data.profile?.email || '', reason: 'General enquiry', message: '' });
   const [status, setStatus] = useState('');
+  const [sending, setSending] = useState(false);
   const [savedMessages, setSavedMessages] = useState(() => {
     try { return JSON.parse(localStorage.getItem('study-blueprint-contact-demo') || '[]'); } catch (_) { return []; }
   });
 
-  function submitContact(event) {
+  async function submitContact(event) {
     event.preventDefault();
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
       setStatus('Please fill name, email and message.');
       return;
     }
-    const entry = { ...form, id: `${Date.now()}`, date: new Date().toLocaleString() };
-    const next = [entry, ...savedMessages].slice(0, 8);
-    localStorage.setItem('study-blueprint-contact-demo', JSON.stringify(next));
-    setSavedMessages(next);
-    setForm({ ...form, message: '' });
-    setStatus('Message saved for demo. Connect EmailJS, Formspree, AWS SES or a backend before production.');
+    setSending(true);
+    setStatus('Sending your message...');
+    try {
+      const response = await fetch('https://formspree.io/f/mgojvzjn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          source: 'In-app Contact Us page',
+          name: form.name,
+          email: form.email,
+          reason: form.reason,
+          message: form.message,
+        }),
+      });
+      if (!response.ok) throw new Error('Formspree request failed');
+      const entry = { ...form, id: `${Date.now()}`, date: new Date().toLocaleString() };
+      const next = [entry, ...savedMessages].slice(0, 8);
+      localStorage.setItem('study-blueprint-contact-demo', JSON.stringify(next));
+      setSavedMessages(next);
+      setForm({ ...form, message: '' });
+      setStatus('Message sent successfully. We will reply soon.');
+    } catch (error) {
+      setStatus('Message could not be sent right now. Please try again after some time.');
+    } finally {
+      setSending(false);
+    }
   }
 
   return <section className="page contactPage">
@@ -873,7 +914,7 @@ function ContactPage({ data }) {
     <div className="contactLayout">
       <form className="card contactForm" onSubmit={submitContact}>
         <h3>Send a message</h3>
-        <p className="mutedText">This is a safe demo form. It does not expose your personal phone number publicly.</p>
+        <p className="mutedText">This form sends messages securely through Formspree. Your personal phone number is not shown publicly.</p>
         <div className="formGrid2">
           <label>Name<input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Your name" /></label>
           <label>Email<input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="your@email.com" /></label>
@@ -886,7 +927,7 @@ function ContactPage({ data }) {
           <option>Content partnership</option>
         </select></label>
         <label>Message<textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Write your message here..." rows={6} /></label>
-        <button className="primary" type="submit"><Send size={17} /> Submit message</button>
+        <button className="primary" type="submit" disabled={sending}><Send size={17} /> {sending ? 'Sending...' : 'Submit message'}</button>
         {status && <div className="contactStatusBox">{status}</div>}
       </form>
 
@@ -894,15 +935,15 @@ function ContactPage({ data }) {
         <div className="card contactInfoCard">
           <Mail size={24} />
           <h3>Business contact setup</h3>
-          <p>Add your official support email later before selling or showing this to clients. Avoid putting personal phone number publicly.</p>
+          <p>Messages from this form will be sent through Formspree. Add your official support email in Formspree settings before client demos.</p>
         </div>
         <div className="card contactInfoCard safe">
           <ShieldCheck size={24} />
           <h3>Your data is safe with us</h3>
-          <p>This demo keeps contact messages only in this browser until a real backend is connected.</p>
+          <p>Contact messages are sent through Formspree and a small recent-message preview is saved only in this browser.</p>
         </div>
         <div className="card">
-          <h3>Recent demo messages</h3>
+          <h3>Recent sent messages</h3>
           {savedMessages.length === 0 ? <p className="empty">No contact messages saved in this browser yet.</p> : savedMessages.map((msg) => <div className="contactMiniMsg" key={msg.id}><b>{msg.name}</b><span>{msg.reason}</span><small>{msg.date}</small></div>)}
         </div>
       </aside>
