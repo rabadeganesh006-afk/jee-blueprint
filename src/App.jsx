@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Authenticator, ThemeProvider, createTheme, useAuthenticator } from '@aws-amplify/ui-react';
 import { generateClient } from 'aws-amplify/api';
+import { getCurrentUser, signOut as amplifySignOut } from 'aws-amplify/auth';
 import '@aws-amplify/ui-react/styles.css';
 import {
   BookOpen, Bot, CalendarDays, Check, CheckCircle2, ChevronDown, Circle, Clock, FileText,
@@ -1283,17 +1284,75 @@ function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setE
 }
 
 
-function AuthLayout({ authScreen, setAuthScreen, publicPage, setPublicPage }) {
-  const { route, user, signOut } = useAuthenticator((context) => [context.route, context.user]);
+const authenticatorFormFields = {
+  signUp: {
+    email: { order: 1, isRequired: true, placeholder: 'your@email.com' },
+    password: { order: 2, isRequired: true, placeholder: 'Create a password' },
+    confirm_password: { order: 3, isRequired: true, placeholder: 'Confirm password' },
+  },
+  signIn: {
+    username: { order: 1, isRequired: true, placeholder: 'your@email.com' },
+    password: { order: 2, isRequired: true, placeholder: 'Enter password' },
+  },
+};
 
-  if (route === 'authenticated' && user) {
-    return <AppShell user={user} signOut={() => { signOut?.(); setAuthScreen(null); }} />;
+function StartupLoading() {
+  return (
+    <main className="startupLoading">
+      <div className="startupCard">
+        <img src="/study-blueprint-icon.svg" alt="Study Blueprint" />
+        <b>Opening Study Blueprint...</b>
+        <span>Checking your saved login safely.</span>
+      </div>
+    </main>
+  );
+}
+
+function AuthLayout({ authScreen, setAuthScreen, publicPage, setPublicPage }) {
+  const { route, user, signOut } = useAuthenticator((context) => [context.route, context.user, context.signOut]);
+  const [sessionUser, setSessionUser] = useState(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function checkSavedLogin() {
+      try {
+        const currentUser = await getCurrentUser();
+        if (!cancelled) setSessionUser(currentUser);
+      } catch (_) {
+        if (!cancelled) setSessionUser(null);
+      } finally {
+        if (!cancelled) setSessionChecked(true);
+      }
+    }
+    checkSavedLogin();
+    return () => { cancelled = true; };
+  }, []);
+
+  const activeUser = (route === 'authenticated' && user) ? user : sessionUser;
+
+  async function safeSignOut() {
+    try { signOut?.(); } catch (_) {}
+    try { await amplifySignOut(); } catch (_) {}
+    setSessionUser(null);
+    setAuthScreen(null);
+    setPublicPage(null);
+  }
+
+  if (activeUser) {
+    return <AppShell user={activeUser} signOut={safeSignOut} />;
+  }
+
+  if (!sessionChecked && !authScreen && !publicPage) {
+    return <StartupLoading />;
   }
 
   if (!authScreen) {
     if (publicPage) return <LegalPublicPage type={publicPage} onBack={() => setPublicPage(null)} />;
     return <LandingPage onSignIn={() => setAuthScreen('signIn')} onCreateAccount={() => setAuthScreen('signUp')} onOpenLegal={setPublicPage} />;
   }
+
+  const initialAuthState = authScreen === 'signUp' ? 'signUp' : 'signIn';
 
   return (
     <div className="authShell authShellModern">
@@ -1318,7 +1377,12 @@ function AuthLayout({ authScreen, setAuthScreen, publicPage, setPublicPage }) {
               <p>{authScreen === 'signUp' ? 'Start tracking your study progress.' : 'Sign in to continue your dashboard.'}</p>
             </div>
           </div>
-          <Authenticator key={authScreen} initialState={authScreen} loginMechanisms={['email']} hideSignUp={authScreen === 'signIn'} />
+          <Authenticator
+            key={authScreen}
+            initialState={initialAuthState}
+            loginMechanisms={['email']}
+            formFields={authenticatorFormFields}
+          />
         </section>
       </div>
     </div>
