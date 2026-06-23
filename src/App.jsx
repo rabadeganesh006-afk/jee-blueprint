@@ -108,9 +108,10 @@ function plannedQuestions(chapter) {
 }
 
 function buildPyqSets(planner) {
-  const subjectOrder = { Physics: 1, Chemistry: 2, Mathematics: 3 };
+  // Keep the exact chapter order from the lecture planner PDFs.
+  // Do not alphabetically sort chapters, because students expect the same flow as the planner.
   return Object.entries(planner).flatMap(([subject, chapters]) =>
-    chapters.map((chapter) => ({
+    chapters.map((chapter, chapterIndex) => ({
       id: `pyq-${subject.toLowerCase()}-${chapter.id || slugify(chapter.title)}`,
       title: chapter.title,
       subject,
@@ -118,8 +119,9 @@ function buildPyqSets(planner) {
       topicCount: chapter.topics?.length || 0,
       questions: plannedQuestions(chapter),
       difficulty: chapterDifficulty(subject, chapter.title, chapter.topics?.length || 0),
+      plannerOrder: chapterIndex + 1,
     }))
-  ).sort((a, b) => (subjectOrder[a.subject] || 9) - (subjectOrder[b.subject] || 9) || a.title.localeCompare(b.title));
+  );
 }
 
 const MATERIALS = [
@@ -170,7 +172,7 @@ function loadData(key, email) {
     const saved = JSON.parse(localStorage.getItem(key));
     if (saved) {
       const base = defaultData(email);
-      return { ...base, ...saved, profile: { ...base.profile, ...(saved.profile || {}), email } };
+      return { ...base, ...saved, active: 'dashboard', profile: { ...base.profile, ...(saved.profile || {}), email } };
     }
   } catch (_) {}
   return defaultData(email);
@@ -715,32 +717,52 @@ function PyqPage({ data, stream, pyqSets, selectedPyq, setSelectedPyq, markPyqSo
   const q = query.trim().toLowerCase();
   const sets = q ? pyqSets.filter((set) => `${set.title} ${set.subject} ${set.subSubject}`.toLowerCase().includes(q)) : pyqSets;
   const current = pyqSets.find((set) => set.id === selectedPyq);
-  const subjectCounts = ['Physics', 'Chemistry', 'Mathematics'].map((subject) => ({
+  const subjectOrder = ['Physics', 'Chemistry', 'Mathematics'];
+  const subjectCounts = subjectOrder.map((subject) => ({
     subject,
     count: pyqSets.filter((set) => set.subject === subject).length,
+    visibleCount: sets.filter((set) => set.subject === subject).length,
     solved: pyqSets.filter((set) => set.subject === subject).reduce((sum, set) => sum + Number(data.pyqSolved?.[set.id] || 0), 0),
   }));
+  const groupedSets = subjectOrder
+    .map((subject) => ({ subject, sets: sets.filter((set) => set.subject === subject) }))
+    .filter((group) => group.sets.length > 0);
+
   return <section className="page">
     <div className="pageHead">
       <h1>PYQ Practice</h1>
-      <p>All {stream} planner chapters are loaded here. Solved count increases only after you click “Mark 1 solved”.</p>
+      <p>{stream} chapter-wise PYQ practice arranged subject-wise in the same order as your lecture planner. Solved count increases only after real practice.</p>
     </div>
     <div className="pyqSummaryStrip">
       <div><b>{sets.length}</b><span>{q ? 'matching chapter sets' : 'chapter-wise PYQ sets'}</span></div>
-      {subjectCounts.map((item) => <div key={item.subject}><b>{item.count}</b><span>{item.subject} chapters</span><small>{item.solved} solved</small></div>)}
+      {subjectCounts.map((item) => <div key={item.subject}><b>{q ? item.visibleCount : item.count}</b><span>{item.subject} chapters</span><small>{item.solved} solved</small></div>)}
     </div>
-    <div className="cards4 pyqChapterGrid">{sets.map((set) => {
-      const solved = Number(data.pyqSolved?.[set.id] || 0);
-      return <div className="card pyqChapterCard" key={set.id}>
-        <span className="badge">{set.subject}</span>
-        <h3>{set.title}</h3>
-        <p>{set.topicCount} planner topics linked</p>
-        <p>{set.questions} PYQs planned • {set.difficulty}</p>
-        <div className="smallProgress"><i style={{ width: `${Math.min(100, percentNumber(solved, set.questions))}%` }} /></div>
-        <small>{solved} / {set.questions} solved</small>
-        <button className="primary" onClick={() => setSelectedPyq(set.id)}>Open set</button>
-      </div>;
-    })}</div>
+
+    <div className="pyqSubjectStack">
+      {groupedSets.map((group) => <section className="pyqSubjectSection" key={group.subject}>
+        <div className="subjectSectionHead">
+          <div>
+            <span className="subjectDot" style={{ background: SUBJECT_COLORS[group.subject] }} />
+            <h2>{group.subject}</h2>
+          </div>
+          <small>{group.sets.length} chapters • planner order</small>
+        </div>
+        <div className="cards4 pyqChapterGrid">{group.sets.map((set) => {
+          const solved = Number(data.pyqSolved?.[set.id] || 0);
+          return <div className="card pyqChapterCard" key={set.id}>
+            <div className="chapterTopLine"><span className="badge">{set.subject}</span><small>Chapter {set.plannerOrder}</small></div>
+            <h3>{set.title}</h3>
+            <p>{set.topicCount} planner topics linked</p>
+            <p>{set.questions} PYQs planned • {set.difficulty}</p>
+            <div className="smallProgress"><i style={{ width: `${Math.min(100, percentNumber(solved, set.questions))}%`, background: `linear-gradient(90deg, ${SUBJECT_COLORS[set.subject]}, #60a5fa)` }} /></div>
+            <small>{solved} / {set.questions} solved</small>
+            <button className="primary" onClick={() => setSelectedPyq(set.id)}>Open set</button>
+          </div>;
+        })}</div>
+      </section>)}
+      {groupedSets.length === 0 && <p className="empty">No PYQ chapter found for your search.</p>}
+    </div>
+
     {current && <div className="card mt stickySetCard"><div><span className="badge">{current.subject}</span><h3>{current.title}</h3></div><p>Solved: {data.pyqSolved?.[current.id] || 0} / {current.questions}</p><div className="btnRow"><button onClick={() => markPyqSolved(current.id, 1)}>Mark 1 solved</button><button onClick={() => markPyqSolved(current.id, 5)}>+5 solved</button><button onClick={() => setSelectedPyq(null)}>Close</button></div></div>}
   </section>;
 }

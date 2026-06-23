@@ -1532,3 +1532,62 @@ summary span { color: var(--muted); font-size: 12px; }
   .pyqSummaryStrip { grid-template-columns: 1fr; }
   .pyqChapterCard h3 { min-height: auto; }
 }
+
+/* V26: PYQ subject sections + login return fix polish */
+.pyqSubjectStack {
+  display: grid;
+  gap: 26px;
+}
+.pyqSubjectSection {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 18px;
+  background: rgba(255,255,255,.44);
+  box-shadow: var(--shadowSoft);
+}
+.app.dark .pyqSubjectSection {
+  background: rgba(15, 23, 42, .46);
+}
+.subjectSectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.subjectSectionHead > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.subjectSectionHead h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -.4px;
+}
+.subjectSectionHead small {
+  color: var(--muted);
+  font-weight: 800;
+}
+.subjectDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 6px rgba(37,99,235,.10);
+}
+.chapterTopLine {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.chapterTopLine small {
+  color: var(--muted);
+  font-weight: 850;
+}
+@media (max-width: 640px) {
+  .pyqSubjectSection { padding: 14px; border-radius: 18px; }
+  .subjectSectionHead { align-items: flex-start; flex-direction: column; }
+}
