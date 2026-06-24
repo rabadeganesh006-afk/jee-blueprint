@@ -1,0 +1,226 @@
+.demoLoginPage {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.15), transparent 34%),
+    #f8fafc;
+}
+
+.demoAuthCard {
+  width: min(960px, 100%);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 32px;
+  padding: clamp(24px, 5vw, 48px);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
+}
+
+.demoAuthBrand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 34px;
+}
+
+.demoAuthBrand img {
+  width: min(260px, 62vw);
+  height: auto;
+}
+
+.demoModeNote,
+.demoModePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(37, 99, 235, 0.22);
+  border-radius: 999px;
+  padding: 9px 13px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 800;
+  font-size: 0.88rem;
+}
+
+.demoHeroCopy {
+  max-width: 720px;
+}
+
+.demoHeroCopy h1 {
+  margin: 14px 0 12px;
+  font-size: clamp(2rem, 6vw, 4.8rem);
+  line-height: 0.95;
+  letter-spacing: -0.07em;
+  color: #0f172a;
+}
+
+.demoHeroCopy p {
+  color: #475569;
+  font-size: 1.08rem;
+  line-height: 1.7;
+  max-width: 650px;
+}
+
+.demoViewButton {
+  width: 100%;
+  justify-content: center;
+  margin: 28px 0 20px;
+  padding: 17px 22px;
+  border-radius: 18px;
+  font-size: 1.04rem;
+}
+
+.demoAuthChecklist {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.demoAuthChecklist div {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 18px;
+  padding: 14px;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 700;
+}
+
+.demoAuthChecklist svg {
+  color: #10b981;
+  flex: 0 0 auto;
+}
+
+.demoFutureAuthNote {
+  margin: 22px 0 0;
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.demoAppShell .main {
+  min-width: 0;
+}
+
+.demoTopbar {
+  gap: 14px;
+}
+
+.demoSideCard {
+  margin: 18px 14px 0;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(37, 99, 235, 0.10);
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  color: #dbeafe;
+  display: grid;
+  gap: 8px;
+}
+
+.demoSideCard span {
+  color: rgba(226, 232, 240, 0.8);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.demoSideCard button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.demoHeroDashboard .demoRing {
+  background: conic-gradient(#3b82f6 0deg 165deg, #10b981 165deg 276deg, #a855f7 276deg 360deg);
+}
+
+.weakMini {
+  display: grid;
+  gap: 3px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.weakMini:last-child {
+  border-bottom: 0;
+}
+
+.weakMini span,
+.demoScoreRow small {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.demoTaskRow svg {
+  color: #2563eb;
+  flex: 0 0 auto;
+}
+
+.demoSubjectProgress {
+  display: grid;
+  gap: 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.demoSubjectProgress:last-child {
+  border-bottom: 0;
+}
+
+.demoStar {
+  color: #f59e0b;
+  margin-left: auto;
+}
+
+.demoWeakCard {
+  min-height: 230px;
+}
+
+.demoBigMetric {
+  display: block;
+  font-size: clamp(2.2rem, 6vw, 4rem);
+  letter-spacing: -0.06em;
+  margin: 10px 0;
+  color: #1d4ed8;
+}
+
+.demoAnalyticsLine {
+  display: grid;
+  grid-template-columns: 150px 1fr 60px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.demoAnalyticsLine:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .demoAuthBrand,
+  .demoTopbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .demoAuthChecklist {
+    grid-template-columns: 1fr;
+  }
+
+  .demoAnalyticsLine {
+    grid-template-columns: 1fr;
+  }
+}
