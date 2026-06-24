@@ -1,18 +1,6 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
-import { askAi } from '../functions/ask-ai/resource';
 
 const schema = a.schema({
-  // AI Tutor backend query
-  askAi: a
-    .query()
-    .arguments({
-      question: a.string().required(),
-      context: a.string(),
-    })
-    .returns(a.string())
-    .authorization((allow) => [allow.authenticated()])
-    .handler(a.handler.function(askAi)),
-
   // -----------------------------
   // Student-owned data models
   // Each signed-in student can read/write only their own records.

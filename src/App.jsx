@@ -277,21 +277,6 @@ function flattenChapters(planner) {
   return Object.entries(planner).flatMap(([subject, chapters]) => chapters.map((chapter) => ({ subject, chapter })));
 }
 
-function localStudyFallback(question) {
-  const q = question.toLowerCase();
-  if (q.includes('plan') || q.includes('revision') || q.includes('strategy')) {
-    return `7-day revision method:\n1) Day 1-2: Revise theory and formulas from notes.\n2) Day 3-4: Solve previous year questions.\n3) Day 5: Solve weak questions again.\n4) Day 6: Take a chapter test.\n5) Day 7: Revise your mistakes notebook.\n\nRule: concept first, then PYQs, then test analysis.`;
-  }
-  if (q.includes('integration')) {
-    return `Sequence for Integration:\n1) Memorize standard formulas perfectly.\n2) Practice substitution, integration by parts, and partial fractions separately.\n3) Solve 15 definite integration property questions daily.\n4) While solving PYQs, identify the method used in each question.`;
-  }
-  if (q.includes('chemical bonding') || q.includes('bonding')) {
-    return `Chemical Bonding priority:\n1) VSEPR shapes\n2) Hybridisation\n3) MOT basics\n4) Bond order and magnetic nature\n5) Dipole moment`;
-  }
-  return `Your doubt: ${question}\n\nBest approach:\n1) Identify the chapter name.\n2) Revise formula/theory for 10 minutes.\n3) Review 5 solved examples.\n4) Solve 15 PYQs.\n5) Write the exact step where you got stuck and ask again.`;
-}
-
-
 function LandingPage({ onSignIn, onCreateAccount, onOpenLegal }) {
   const [contactStatus, setContactStatus] = useState('');
   const [landingContact, setLandingContact] = useState({ name: '', email: '', message: '' });
@@ -859,7 +844,7 @@ function AppShell({ user, signOut }) {
             })}
           </div>
         ))}
-        <div className="aiHelp"><Bot size={42} /><strong>Chat. Learn. Improve.</strong><span>Ask doubts and get study help.</span><button onClick={() => setActive('ai')}>Open AI Tutor</button></div>
+        <div className="aiHelp comingSoonMini"><Bot size={42} /><strong>AI Tutor</strong><span>Coming soon. This feature is temporarily disabled while we improve reliability.</span><button onClick={() => setActive('ai')}>View Status</button></div>
       </aside>
 
       <main className="main">
@@ -888,7 +873,7 @@ function AppShell({ user, signOut }) {
         {data.active === 'pyq' && <PyqPage data={data} stream={data.stream} pyqSets={pyqSets} selectedPyq={selectedPyq} setSelectedPyq={setSelectedPyq} markPyqSolved={markPyqSolved} query={query} />}
         {data.active === 'material' && <MaterialPage data={data} toggleMaterial={toggleMaterial} query={query} />}
         {data.active === 'tests' && <TestsPage data={data} testScore={testScore} setTestScore={setTestScore} saveTest={saveTest} />}
-        {data.active === 'ai' && <AiPage data={data} localStudyFallback={localStudyFallback} />}
+        {data.active === 'ai' && <AiPage />}
         {data.active === 'contact' && <ContactPage data={data} />}
         {data.active === 'privacy' && <LegalContent type="privacy" inApp />}
         {data.active === 'profile' && <ProfilePage data={data} profileDraft={profileDraft} setProfileDraft={setProfileDraft} editingProfile={editingProfile} setEditingProfile={setEditingProfile} saveProfile={saveProfile} signOut={signOut} resetLocalData={resetLocalData} cloudSync={cloudSync} deleteAccountAndData={deleteAccountAndData} />}
@@ -1027,7 +1012,7 @@ function Dashboard({ data, planner, progressValue, doneCount, totalTopics, total
             return <details key={chapter.id} className="chapterPanel"><summary><div><b>{chapter.title}</b></div><span>{done}/{topics.length} • {percentText(pct)}</span></summary><div className="topicList">{topics.map((topic) => <div className={data.topicsDone?.[topic.id] ? 'topicRow done' : 'topicRow'} key={topic.id}><button className="topicCheck" onClick={() => toggleTopic(topic, chapter.title)}>{data.topicsDone?.[topic.id] ? <CheckCircle2 size={18} /> : <Circle size={18} />}</button><div><b>{topic.title}</b></div><button title="Flag topic" onClick={() => toggleFlagTopic(topic)} className={data.topicsFlagged?.[topic.id] ? 'flagged topicStar' : 'topicStar'}><Star size={15}/></button></div>)}</div></details>;
           })}</div></details>;
         })}</div>
-        <div className="card"><h3>Pending Tasks</h3><div className="inlineForm"><input value={newTask} onChange={(e) => setNewTask(e.target.value)} placeholder="Add real task..." /><button onClick={addTask}><Plus size={17} /></button></div>{pending.length === 0 ? <p className="empty">No pending tasks yet.</p> : pending.slice(0, 8).map((task) => <div className="task" key={task.id}><button onClick={() => toggleTask(task.id)}><Circle size={17} /></button><span>{task.title}</span><small>{formatDate(task.date)}</small><button onClick={() => deleteTask(task.id)}><Trash2 size={15} /></button></div>)}<h3 className="mt">Quick Actions</h3><div className="quickActions"><button onClick={() => setActive('pyq')}><Pi /> <b>PYQ Practice</b><span>Practice past questions</span></button><button onClick={() => setActive('tests')}><CheckCircle2 /> <b>Test Series</b><span>Add manual scores</span></button><button onClick={() => setActive('ai')}><Bot /> <b>AI Tutor</b><span>Real AI / fallback</span></button><button onClick={() => setActive('material')}><BookOpen /> <b>Study Material</b><span>Mark notes as read</span></button></div><div className="between mt"><h3>Recent Activity</h3>{visibleActivities.length > 0 && <button className="smallDanger" onClick={clearActivities}>Clear all</button>}</div>{visibleActivities.length === 0 ? <p className="empty">No activity yet. Start marking topics, PYQs or study time.</p> : visibleActivities.slice(0, 8).map((a) => <div className="activity removable" key={a.id}><CheckCircle2 size={16}/><span>{a.text}</span><small>{a.date}</small><button onClick={() => deleteActivity(a.id)}><X size={15}/></button></div>)}</div>
+        <div className="card"><h3>Pending Tasks</h3><div className="inlineForm"><input value={newTask} onChange={(e) => setNewTask(e.target.value)} placeholder="Add real task..." /><button onClick={addTask}><Plus size={17} /></button></div>{pending.length === 0 ? <p className="empty">No pending tasks yet.</p> : pending.slice(0, 8).map((task) => <div className="task" key={task.id}><button onClick={() => toggleTask(task.id)}><Circle size={17} /></button><span>{task.title}</span><small>{formatDate(task.date)}</small><button onClick={() => deleteTask(task.id)}><Trash2 size={15} /></button></div>)}<h3 className="mt">Quick Actions</h3><div className="quickActions"><button onClick={() => setActive('pyq')}><Pi /> <b>PYQ Practice</b><span>Practice past questions</span></button><button onClick={() => setActive('tests')}><CheckCircle2 /> <b>Test Series</b><span>Add manual scores</span></button><button onClick={() => setActive('ai')}><Bot /> <b>AI Tutor</b><span>Coming soon</span></button><button onClick={() => setActive('material')}><BookOpen /> <b>Study Material</b><span>Mark notes as read</span></button></div><div className="between mt"><h3>Recent Activity</h3>{visibleActivities.length > 0 && <button className="smallDanger" onClick={clearActivities}>Clear all</button>}</div>{visibleActivities.length === 0 ? <p className="empty">No activity yet. Start marking topics, PYQs or study time.</p> : visibleActivities.slice(0, 8).map((a) => <div className="activity removable" key={a.id}><CheckCircle2 size={16}/><span>{a.text}</span><small>{a.date}</small><button onClick={() => deleteActivity(a.id)}><X size={15}/></button></div>)}</div>
       </div>
     </section>
   );
@@ -1097,38 +1082,42 @@ function TestsPage({ data, testScore, setTestScore, saveTest }) {
   return <section className="page"><div className="pageHead"><h1>Test Series</h1><p>Add real test scores manually. No automatic fake score is shown.</p></div><div className="grid2"><div className="card"><h3>Add Test Score</h3><input placeholder="Test name" value={testScore.name} onChange={(e) => setTestScore({ ...testScore, name: e.target.value })} /><input placeholder="Score" value={testScore.score} onChange={(e) => setTestScore({ ...testScore, score: e.target.value })} /><input placeholder="Total marks" value={testScore.total} onChange={(e) => setTestScore({ ...testScore, total: e.target.value })} /><button className="primary" onClick={saveTest}>Save score</button></div><div className="card"><h3>Saved Tests</h3>{(data.tests || []).length === 0 ? <p className="empty">No test score added yet.</p> : data.tests.map((t) => <div className="quickStat" key={t.id}><span>{t.name}<small>{t.date}</small></span><b>{t.score}/{t.total}</b></div>)}</div></div></section>;
 }
 
-function AiPage({ data, localStudyFallback }) {
-  const client = useMemo(() => generateClient(), []);
-  const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  async function askTutor() {
-    const text = question.trim();
-    if (!text) { setError('First type your doubt/question.'); return; }
-    setLoading(true); setError(''); setAnswer('');
-    try {
-      const context = JSON.stringify({
-        stream: data.stream,
-        targetExam: data.profile?.targetExam,
-        targetDate: data.profile?.targetDate,
-        className: data.profile?.className,
-        weakAreas: data.profile?.weakAreas,
-      });
-      const result = await client.queries.askAi({ question: text, context });
-      const aiText = result?.data || '';
-      if (result?.errors?.length) { setAnswer(localStudyFallback(text)); setError('Backend AI call failed, so a local fallback answer is shown.'); }
-      else { setAnswer(aiText || localStudyFallback(text)); }
-    } catch (err) {
-      setAnswer(localStudyFallback(text));
-      setError('Could not connect to AI right now. Showing a study-helper answer.');
-    } finally { setLoading(false); }
-  }
-
-  function example(text) { setQuestion(text); setAnswer(''); setError(''); }
-
-  return <section className="page"><div className="pageHead"><h1>AI Tutor</h1></div><div className="card aiTutorPanel"><div className="aiTutorTop"><div className="aiAvatar"><Bot size={30} /></div><div><h2>Ask Study Blueprint AI</h2><p>Ask Physics, Chemistry, Maths doubts, study plans, and revision strategy.</p></div></div><div className="aiExamples"><button onClick={() => example('Explain Kirchhoff laws with one JEE level example')}>Explain Kirchhoff laws</button><button onClick={() => example('Give me a 7 day revision plan for Chemical Bonding')}>7 day revision plan</button><button onClick={() => example('How should I revise Integration for JEE Advanced?')}>Integration strategy</button></div><textarea className="aiInput" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Type your doubt in English, Hindi or Marathi..." rows={5} /><div className="aiActionRow"><button className="primary" onClick={askTutor} disabled={loading}>{loading ? 'AI thinking...' : 'Ask AI Tutor'} <Send size={17} /></button></div>{error && <div className="aiError">{error}</div>}{answer && <div className="aiAnswer"><h3>Answer</h3><pre>{answer}</pre></div>}</div></section>;
+function AiPage() {
+  return (
+    <section className="page">
+      <div className="pageHead">
+        <h1>AI Tutor</h1>
+        <p>This feature is temporarily disabled while we improve reliability.</p>
+      </div>
+      <div className="card aiTutorPanel comingSoonPanel">
+        <div className="aiTutorTop">
+          <div className="aiAvatar"><Bot size={30} /></div>
+          <div>
+            <span className="badge">Coming Soon</span>
+            <h2>Study Blueprint AI Tutor is being upgraded</h2>
+            <p>AI Tutor is currently turned off to avoid wrong responses, quota errors, and unstable experience for students.</p>
+          </div>
+        </div>
+        <div className="comingSoonGrid">
+          <div>
+            <b>Current status</b>
+            <span>Disabled for now</span>
+          </div>
+          <div>
+            <b>Reason</b>
+            <span>Reliability and quota issues</span>
+          </div>
+          <div>
+            <b>Next plan</b>
+            <span>We will bring it back after proper testing</span>
+          </div>
+        </div>
+        <div className="safeBox">
+          For now, continue using Topic Tracker, PYQ Practice, Study Material, Test Series, and Study Timer.
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function ContactPage({ data }) {

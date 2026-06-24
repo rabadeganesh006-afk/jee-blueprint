@@ -29,3 +29,13 @@ Upload all extracted files/folders to the GitHub repository root and let AWS Amp
 - Adds slimmer, cleaner scrollbars across the app.
 - Keeps mobile bottom navigation behavior unchanged.
 
+
+
+## V38 AI Tutor disabled / Coming Soon
+
+- AI Tutor frontend chat box removed and replaced with a professional Coming Soon panel.
+- AI quick action and sidebar card now show Coming Soon / View Status instead of asking questions.
+- Backend askAi query and Lambda wiring removed from Amplify data/backend to avoid Gemini quota/API problems.
+- Existing dashboard, profile cloud sync foundation, auth, contact, privacy, and layout fixes retained.
+
+Deploy by uploading all extracted files/folders to the GitHub repository root.
