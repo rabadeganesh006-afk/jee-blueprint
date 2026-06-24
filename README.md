@@ -21,3 +21,11 @@ Upload all extracted files/folders to the GitHub repository root and let AWS Amp
 - City and preferred content rows removed from the visible details list.
 - Remaining non-required profile fields show an Optional label.
 - Added a safer typed confirmation before deleting account/data.
+
+## V37 fixed desktop shell
+
+- Keeps the left sidebar fixed while dashboard pages scroll.
+- Keeps the top welcome/search bar fixed while scrolling.
+- Adds slimmer, cleaner scrollbars across the app.
+- Keeps mobile bottom navigation behavior unchanged.
+
