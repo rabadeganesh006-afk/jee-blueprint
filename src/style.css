@@ -2265,3 +2265,54 @@ html {
     grid-template-columns: 1fr;
   }
 }
+
+/* V40 final Study Blueprint logo replacement */
+.brandLogoFull {
+  width: 100%;
+  max-width: 238px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+.sidebar .brandFull {
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 18px 10px 20px !important;
+  gap: 0 !important;
+  overflow: visible !important;
+}
+.sidebar .brandLogoFull {
+  max-width: 226px;
+}
+.landingNav img,
+.legalPublicTop img,
+.authBrandLogo {
+  object-fit: contain;
+  height: auto;
+}
+.landingNav img {
+  width: 300px !important;
+  max-width: 58vw !important;
+}
+.legalPublicTop img {
+  width: 280px !important;
+  max-width: 60vw !important;
+}
+.authBrandLogo {
+  width: min(360px, 100%) !important;
+  max-width: 100% !important;
+  margin-bottom: 20px !important;
+}
+@media (max-width: 900px) {
+  .landingNav img { width: 230px !important; max-width: 58vw !important; }
+  .legalPublicTop img { width: 210px !important; max-width: 58vw !important; }
+  .authBrandLogo { width: min(280px, 100%) !important; }
+}
+@media (max-width: 520px) {
+  .landingNav img { width: 175px !important; max-width: 54vw !important; }
+  .legalPublicTop img { width: 170px !important; max-width: 54vw !important; }
+  .authBrandLogo { width: min(240px, 100%) !important; }
+}
+@media (min-width: 901px) {
+  .sidebar .brandLogoFull { max-width: 230px; }
+}

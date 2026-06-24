@@ -323,7 +323,7 @@ function LandingPage({ onSignIn, onCreateAccount, onOpenLegal }) {
   return (
     <main className="landing">
       <nav className="landingNav">
-        <img src="/study-blueprint-logo.svg" alt="Study Blueprint" />
+        <img src="/study-blueprint-logo-new.png" alt="Study Blueprint" />
         <div>
           <button onClick={onSignIn} className="ghostBtn">Sign in</button>
           <button onClick={onCreateAccount} className="primary">Get Started</button>
@@ -498,7 +498,7 @@ function LegalPublicPage({ type, onBack }) {
   return (
     <main className="landing legalPublicShell">
       <div className="legalPublicTop">
-        <img src="/study-blueprint-logo.svg" alt="Study Blueprint" />
+        <img src="/study-blueprint-logo-new.png" alt="Study Blueprint" />
         <button className="outlineBtn" onClick={onBack}>← Back to Study Blueprint</button>
       </div>
       <LegalContent type={type} />
@@ -829,11 +829,7 @@ function AppShell({ user, signOut }) {
     <div className={`app ${data.theme === 'dark' ? 'dark' : 'light'}`}>
       <aside className="sidebar">
         <div className="brand brandFull">
-          <img className="brandMark" src="/study-blueprint-icon.svg" alt="Study Blueprint" />
-          <div className="brandWords">
-            <div className="brandTitle">Study Blueprint</div>
-            <div className="brandLine">Plan • Track • Improve</div>
-          </div>
+          <img className="brandLogoFull" src="/study-blueprint-logo-new.png" alt="Study Blueprint - Plan Track Improve" />
         </div>
         {['LEARN', 'ASSESS', 'AI LEARNING', 'ACCOUNT', 'LEGAL'].map((group) => (
           <div className="navGroup" key={group}>
@@ -1496,7 +1492,7 @@ function AuthCard({ mode, setMode, onSignedIn }) {
         <button type="button" className={mode === 'signUp' ? 'active' : ''} onClick={() => setMode('signUp')}>Create Account</button>
       </div>
       <div className="authFormHeader authFormHeaderInside">
-        <img src="/study-blueprint-icon.svg" alt="Study Blueprint icon" />
+        <img src="/study-blueprint-icon-new.png" alt="Study Blueprint icon" />
         <div>
           <h2>{title}</h2>
           <p>{subtitle}</p>
@@ -1548,7 +1544,7 @@ function StartupLoading() {
   return (
     <main className="startupLoading">
       <div className="startupCard">
-        <img src="/study-blueprint-icon.svg" alt="Study Blueprint" />
+        <img src="/study-blueprint-icon-new.png" alt="Study Blueprint" />
         <b>Opening Study Blueprint...</b>
         <span>Checking your saved login safely.</span>
       </div>
@@ -1606,8 +1602,7 @@ function AuthLayout({ authScreen, setAuthScreen, publicPage, setPublicPage }) {
       <button className="backLanding" onClick={() => setAuthScreen(null)}>← Back to Study Blueprint</button>
       <div className="authPageGrid">
         <section className="authBrandPanel">
-          <img className="authBrandLogo" src="/study-blueprint-logo.svg" alt="Study Blueprint" />
-          <span className="landingBadge">Plan • Track • Improve</span>
+          <img className="authBrandLogo" src="/study-blueprint-logo-new.png" alt="Study Blueprint - Plan Track Improve" />
           <h1>Build your preparation blueprint.</h1>
           <p>Login to track topics, run a study timer, manage PYQs, and continue your JEE progress dashboard.</p>
           <div className="authFeatureList">

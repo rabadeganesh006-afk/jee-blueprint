@@ -39,3 +39,9 @@ Upload all extracted files/folders to the GitHub repository root and let AWS Amp
 - Existing dashboard, profile cloud sync foundation, auth, contact, privacy, and layout fixes retained.
 
 Deploy by uploading all extracted files/folders to the GitHub repository root.
+
+
+## V40 final logo update
+- Replaced the old Study Blueprint logo across the public landing page, auth screens, legal pages, sidebar, favicon and app icons.
+- Removed the separate old sidebar logo/tagline text so the new final logo is used consistently.
+- Kept AI Tutor disabled as Coming Soon and retained previous build fixes.
