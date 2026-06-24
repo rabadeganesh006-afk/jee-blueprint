@@ -73,6 +73,27 @@
   font-size: 1.04rem;
 }
 
+.demoWebsiteAuthButton {
+  width: 100%;
+  margin-top: 12px;
+  min-height: 56px;
+  border: 1px solid rgba(37, 99, 235, 0.28);
+  border-radius: 16px;
+  background: #ffffff;
+  color: #1d4ed8;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.demoWebsiteAuthButton:hover {
+  transform: translateY(-1px);
+  background: #eff6ff;
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.14);
+}
+
 .demoAuthChecklist {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
