@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Authenticator, ThemeProvider, createTheme, useAuthenticator } from '@aws-amplify/ui-react';
 import { generateClient } from 'aws-amplify/api';
-import { getCurrentUser, signOut as amplifySignOut } from 'aws-amplify/auth';
+import { confirmResetPassword, confirmSignUp, getCurrentUser, resetPassword, signIn as amplifySignIn, signOut as amplifySignOut, signUp as amplifySignUp } from 'aws-amplify/auth';
 import '@aws-amplify/ui-react/styles.css';
 import {
   BookOpen, Bot, CalendarDays, Check, CheckCircle2, ChevronDown, Circle, Clock, FileText,
@@ -494,7 +494,7 @@ function LegalPublicPage({ type, onBack }) {
     <main className="landing legalPublicShell">
       <div className="legalPublicTop">
         <img src="/study-blueprint-logo.svg" alt="Study Blueprint" />
-        <button className="outlineBtn" onClick={onBack}>← Back to home</button>
+        <button className="outlineBtn" onClick={onBack}>← Back to Study Blueprint</button>
       </div>
       <LegalContent type={type} />
     </main>
@@ -1284,17 +1284,209 @@ function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setE
 }
 
 
-const authenticatorFormFields = {
-  signUp: {
-    email: { order: 1, isRequired: true, placeholder: 'your@email.com' },
-    password: { order: 2, isRequired: true, placeholder: 'Create a password' },
-    confirm_password: { order: 3, isRequired: true, placeholder: 'Confirm password' },
-  },
-  signIn: {
-    username: { order: 1, isRequired: true, placeholder: 'your@email.com' },
-    password: { order: 2, isRequired: true, placeholder: 'Enter password' },
-  },
-};
+
+function AuthCard({ mode, setMode, onSignedIn }) {
+  const [form, setForm] = useState({ email: '', password: '', confirmPassword: '', code: '', resetCode: '', newPassword: '' });
+  const [step, setStep] = useState(mode === 'signUp' ? 'signUp' : 'signIn');
+  const [status, setStatus] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setStep(mode === 'signUp' ? 'signUp' : 'signIn');
+    setStatus('');
+  }, [mode]);
+
+  function cleanEmail(value = form.email) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  function updateField(key, value) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function refreshSignedInUser() {
+    const currentUser = await getCurrentUser();
+    onSignedIn?.(currentUser);
+  }
+
+  async function handleSignIn(event) {
+    event.preventDefault();
+    setStatus('');
+    const email = cleanEmail();
+    if (!email || !form.password) {
+      setStatus('Please enter email and password.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await amplifySignIn({ username: email, password: form.password });
+      if (result?.nextStep?.signInStep === 'CONFIRM_SIGN_UP') {
+        setStep('confirmSignUp');
+        setStatus('Please enter the confirmation code sent to your email.');
+        return;
+      }
+      await refreshSignedInUser();
+    } catch (error) {
+      const message = String(error?.message || 'Sign in failed. Please check your email and password.');
+      setStatus(message.includes('already a signed in user') ? 'You are already signed in. Opening dashboard...' : message);
+      if (message.includes('already a signed in user')) await refreshSignedInUser();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSignUp(event) {
+    event.preventDefault();
+    setStatus('');
+    const email = cleanEmail();
+    if (!email || !form.password || !form.confirmPassword) {
+      setStatus('Please fill email, password and confirm password.');
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      setStatus('Password and confirm password do not match.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await amplifySignUp({
+        username: email,
+        password: form.password,
+        options: { userAttributes: { email } },
+      });
+      if (result?.nextStep?.signUpStep === 'CONFIRM_SIGN_UP') {
+        setStep('confirmSignUp');
+        setStatus('Account created. Enter the confirmation code sent to your email.');
+      } else {
+        await amplifySignIn({ username: email, password: form.password });
+        await refreshSignedInUser();
+      }
+    } catch (error) {
+      setStatus(error?.message || 'Could not create account right now.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleConfirmSignUp(event) {
+    event.preventDefault();
+    setStatus('');
+    const email = cleanEmail();
+    if (!email || !form.code) {
+      setStatus('Please enter email and confirmation code.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await confirmSignUp({ username: email, confirmationCode: form.code.trim() });
+      await amplifySignIn({ username: email, password: form.password });
+      await refreshSignedInUser();
+    } catch (error) {
+      setStatus(error?.message || 'Confirmation failed. Please check the code.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResetStart(event) {
+    event.preventDefault();
+    setStatus('');
+    const email = cleanEmail();
+    if (!email) {
+      setStatus('Enter your email first, then request reset code.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await resetPassword({ username: email });
+      setStep('resetConfirm');
+      setStatus('Reset code sent to your email.');
+    } catch (error) {
+      setStatus(error?.message || 'Could not send reset code right now.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResetConfirm(event) {
+    event.preventDefault();
+    setStatus('');
+    const email = cleanEmail();
+    if (!email || !form.resetCode || !form.newPassword) {
+      setStatus('Please enter email, reset code and new password.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await confirmResetPassword({ username: email, confirmationCode: form.resetCode.trim(), newPassword: form.newPassword });
+      setMode('signIn');
+      setStep('signIn');
+      setStatus('Password updated. Sign in with your new password.');
+    } catch (error) {
+      setStatus(error?.message || 'Could not reset password. Please check the code.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const isCreate = step === 'signUp' || step === 'confirmSignUp';
+  const title = step === 'resetConfirm' ? 'Reset password' : isCreate ? 'Create your account' : 'Welcome back';
+  const subtitle = step === 'resetConfirm' ? 'Enter the code sent to your email.' : isCreate ? 'Start tracking your study progress.' : 'Sign in to continue your dashboard.';
+
+  return (
+    <div className="customAuthBox">
+      <div className="authModeTabs" role="tablist" aria-label="Authentication mode">
+        <button type="button" className={mode === 'signIn' && step !== 'resetConfirm' ? 'active' : ''} onClick={() => setMode('signIn')}>Sign In</button>
+        <button type="button" className={mode === 'signUp' ? 'active' : ''} onClick={() => setMode('signUp')}>Create Account</button>
+      </div>
+      <div className="authFormHeader authFormHeaderInside">
+        <img src="/study-blueprint-icon.svg" alt="Study Blueprint icon" />
+        <div>
+          <h2>{title}</h2>
+          <p>{subtitle}</p>
+        </div>
+      </div>
+
+      {step === 'signIn' && (
+        <form className="customAuthForm" onSubmit={handleSignIn}>
+          <label>Email<input type="email" autoComplete="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} placeholder="your@email.com" /></label>
+          <label>Password<input type="password" autoComplete="current-password" value={form.password} onChange={(e) => updateField('password', e.target.value)} placeholder="Enter password" /></label>
+          <button className="primary authSubmit" type="submit" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</button>
+          <button className="linkButton" type="button" onClick={handleResetStart} disabled={loading}>Forgot password?</button>
+        </form>
+      )}
+
+      {step === 'signUp' && (
+        <form className="customAuthForm" onSubmit={handleSignUp}>
+          <label>Email<input type="email" autoComplete="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} placeholder="your@email.com" /></label>
+          <label>Password<input type="password" autoComplete="new-password" value={form.password} onChange={(e) => updateField('password', e.target.value)} placeholder="Create password" /></label>
+          <label>Confirm Password<input type="password" autoComplete="new-password" value={form.confirmPassword} onChange={(e) => updateField('confirmPassword', e.target.value)} placeholder="Confirm password" /></label>
+          <button className="primary authSubmit" type="submit" disabled={loading}>{loading ? 'Creating account...' : 'Create account'}</button>
+        </form>
+      )}
+
+      {step === 'confirmSignUp' && (
+        <form className="customAuthForm" onSubmit={handleConfirmSignUp}>
+          <label>Email<input type="email" autoComplete="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} placeholder="your@email.com" /></label>
+          <label>Confirmation Code<input inputMode="numeric" value={form.code} onChange={(e) => updateField('code', e.target.value)} placeholder="Enter code" /></label>
+          <button className="primary authSubmit" type="submit" disabled={loading}>{loading ? 'Confirming...' : 'Confirm and continue'}</button>
+        </form>
+      )}
+
+      {step === 'resetConfirm' && (
+        <form className="customAuthForm" onSubmit={handleResetConfirm}>
+          <label>Email<input type="email" autoComplete="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} placeholder="your@email.com" /></label>
+          <label>Reset Code<input inputMode="numeric" value={form.resetCode} onChange={(e) => updateField('resetCode', e.target.value)} placeholder="Enter reset code" /></label>
+          <label>New Password<input type="password" autoComplete="new-password" value={form.newPassword} onChange={(e) => updateField('newPassword', e.target.value)} placeholder="New password" /></label>
+          <button className="primary authSubmit" type="submit" disabled={loading}>{loading ? 'Updating...' : 'Update password'}</button>
+        </form>
+      )}
+
+      {status && <div className="authStatusBox">{status}</div>}
+    </div>
+  );
+}
+
 
 function StartupLoading() {
   return (
@@ -1352,11 +1544,10 @@ function AuthLayout({ authScreen, setAuthScreen, publicPage, setPublicPage }) {
     return <LandingPage onSignIn={() => setAuthScreen('signIn')} onCreateAccount={() => setAuthScreen('signUp')} onOpenLegal={setPublicPage} />;
   }
 
-  const initialAuthState = authScreen === 'signUp' ? 'signUp' : 'signIn';
 
   return (
     <div className="authShell authShellModern">
-      <button className="backLanding" onClick={() => setAuthScreen(null)}>← Back to landing</button>
+      <button className="backLanding" onClick={() => setAuthScreen(null)}>← Back to Study Blueprint</button>
       <div className="authPageGrid">
         <section className="authBrandPanel">
           <img className="authBrandLogo" src="/study-blueprint-logo.svg" alt="Study Blueprint" />
@@ -1370,19 +1561,7 @@ function AuthLayout({ authScreen, setAuthScreen, publicPage, setPublicPage }) {
           </div>
         </section>
         <section className="authFormPanel">
-          <div className="authFormHeader">
-            <img src="/study-blueprint-icon.svg" alt="Study Blueprint icon" />
-            <div>
-              <h2>{authScreen === 'signUp' ? 'Create your account' : 'Welcome back'}</h2>
-              <p>{authScreen === 'signUp' ? 'Start tracking your study progress.' : 'Sign in to continue your dashboard.'}</p>
-            </div>
-          </div>
-          <Authenticator
-            key={authScreen}
-            initialState={initialAuthState}
-            loginMechanisms={['email']}
-            formFields={authenticatorFormFields}
-          />
+          <AuthCard mode={authScreen} setMode={setAuthScreen} onSignedIn={(nextUser) => { setSessionUser(nextUser); setAuthScreen(null); setPublicPage(null); }} />
         </section>
       </div>
     </div>

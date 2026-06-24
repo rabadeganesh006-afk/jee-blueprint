@@ -1964,3 +1964,114 @@ html, body, #root { max-width: 100%; overflow-x: hidden; }
   .landingNav img { width: min(170px, 56vw) !important; max-width: 56vw !important; }
   .landingNav .ghostBtn { font-size: 12px !important; padding: 7px 10px !important; }
 }
+
+/* V35: custom auth form fix - removes Amplify form layout blank/shift issue */
+.authFormPanel {
+  align-items: center;
+}
+.customAuthBox {
+  width: min(460px, 100%);
+  margin: 0 auto;
+  border: 1px solid #dbeafe;
+  border-radius: 26px;
+  background: #ffffff;
+  box-shadow: 0 18px 46px rgba(15,23,42,.08);
+  padding: 24px;
+  overflow: hidden;
+}
+.authModeTabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid #dbeafe;
+  background: #f8fbff;
+  border-radius: 16px;
+  margin-bottom: 18px;
+}
+.authModeTabs button {
+  min-height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #475569;
+  font-weight: 950;
+}
+.authModeTabs button.active {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(37,99,235,.22);
+}
+.authFormHeaderInside {
+  width: 100%;
+  margin: 0 0 18px;
+}
+.customAuthForm {
+  width: 100%;
+  display: grid;
+  gap: 14px;
+}
+.customAuthForm label {
+  display: grid;
+  gap: 7px;
+  color: #334155;
+  font-weight: 850;
+}
+.customAuthForm input {
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  border: 1px solid #cbd5e1;
+  border-radius: 13px;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 0 14px;
+  outline: none;
+  font-weight: 750;
+}
+.customAuthForm input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37,99,235,.11);
+}
+.authSubmit {
+  width: 100%;
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+}
+.linkButton {
+  border: none;
+  background: transparent;
+  color: #0f766e;
+  font-weight: 900;
+  padding: 8px;
+}
+.authStatusBox {
+  margin-top: 14px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+  border-radius: 14px;
+  padding: 12px;
+  line-height: 1.45;
+  font-weight: 760;
+}
+@media (max-width: 900px) {
+  .authShellModern { padding: 14px; place-items: start center; }
+  .authPageGrid { width: 100%; min-height: auto; }
+  .authFormPanel { padding: 82px 16px 28px; }
+  .customAuthBox { padding: 18px; border-radius: 22px; }
+  .backLanding { left: 14px; top: 14px; max-width: calc(100% - 28px); }
+}
+@media (max-width: 520px) {
+  .authShellModern { padding: 0; }
+  .authPageGrid { border-radius: 0; min-height: 100vh; border-left: 0; border-right: 0; }
+  .authFormPanel { padding: 84px 14px 24px; }
+  .customAuthBox { width: 100%; box-shadow: 0 12px 32px rgba(15,23,42,.08); }
+  .authModeTabs button { font-size: 13px; }
+  .authFormHeaderInside img { width: 48px; height: 48px; }
+  .authFormHeaderInside h2 { font-size: 21px; }
+  .customAuthForm input { height: 47px; }
+}

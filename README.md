@@ -1,23 +1,13 @@
-# Study Blueprint V34 — Profile + Exam Target Cloud Sync
+# Study Blueprint V35 Auth Layout Hotfix
 
-This version starts Phase 2B.
+This version keeps V33/V34 database and profile sync work, and replaces the Amplify prebuilt auth UI with a controlled custom auth form to avoid blank/shifted create-account screens.
 
-## Added
-- Keeps all V32 database foundation models.
-- Adds auto-login and auth form hotfix using Amplify Data models.
-- Profile still saves locally as a browser fallback.
-- Profile page now shows cloud sync status.
-- Includes the mobile landing/delete/auth hotfix.
+## Fixes
+- Create account blank/shifted form fixed with custom sign in/sign up UI.
+- Back button text changed to "Back to Study Blueprint".
+- Mobile auth form layout improved.
+- Saved login auto-dashboard behavior retained.
+- Profile cloud sync foundation retained.
 
-## Notes
-- Profile photo still stays local until the Storage/S3 phase.
-- Topic progress, timer, tasks and PYQ sync will be added in later phases.
-- If cloud sync is not ready during deploy, the app falls back to local browser data.
-
-
-## V34 hotfix
-
-- Automatically opens the dashboard when a saved login session exists.
-- Fixes mobile landing header overflow by hiding the extra Get Started nav button on small screens.
-- Restores the Amplify Create account form instead of showing a blank card.
-- Keeps V33 profile and exam target cloud sync.
+## Deploy
+Upload all extracted files/folders to the GitHub repository root and let AWS Amplify deploy.
