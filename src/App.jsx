@@ -347,11 +347,39 @@ function LandingPage({ onSignIn, onCreateAccount, onOpenLegal }) {
         </div>
       </section>
 
-      <section className="trustStrip">
-        <div><b>Smart</b><span>Learning Experience</span></div>
-        <div><b>3</b><span>core subjects</span></div>
-        <div><b>270+</b><span>planner topics loaded</span></div>
-        <div><b>Mobile</b><span>friendly dashboard</span></div>
+      <section className="trustStrip" aria-label="Study Blueprint highlights">
+        <article className="trustCard">
+          <div className="trustIcon"><ShieldCheck size={23} /></div>
+          <div>
+            <small>TRUSTWORTHY</small>
+            <b>Smart</b>
+            <span>Learning experience built for focus and academic success.</span>
+          </div>
+        </article>
+        <article className="trustCard">
+          <div className="trustIcon"><Target size={23} /></div>
+          <div>
+            <small>FOCUSED</small>
+            <b>3</b>
+            <span>Core subjects with intentional planning and daily tracking.</span>
+          </div>
+        </article>
+        <article className="trustCard">
+          <div className="trustIcon"><Trophy size={23} /></div>
+          <div>
+            <small>PROGRESS-DRIVEN</small>
+            <b>270+</b>
+            <span>Planner topics loaded to improve every day with clarity.</span>
+          </div>
+        </article>
+        <article className="trustCard">
+          <div className="trustIcon"><CheckCircle2 size={23} /></div>
+          <div>
+            <small>APP-READY</small>
+            <b>Mobile</b>
+            <span>Friendly dashboard designed to look great across platforms.</span>
+          </div>
+        </article>
       </section>
 
       <section className="landingSection">
