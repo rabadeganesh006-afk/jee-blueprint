@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import App from './App.jsx';
-import DemoApp from './DemoApp.jsx';
+import DemoApp from './WorkingDemoApp.jsx';
 import './demoPreview.css';
 
 const DEMO_HASH = '#demo-dashboard';
