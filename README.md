@@ -11,3 +11,13 @@ This version keeps V33/V34 database and profile sync work, and replaces the Ampl
 
 ## Deploy
 Upload all extracted files/folders to the GitHub repository root and let AWS Amplify deploy.
+
+
+## V36 small stability cleanup
+
+- Sidebar logo tagline fit improved.
+- Delete My Data removed from sidebar and moved into Profile > Account Actions.
+- Profile unnecessary cloud/privacy boxes removed from the visible profile card.
+- City and preferred content rows removed from the visible details list.
+- Remaining non-required profile fields show an Optional label.
+- Added a safer typed confirmation before deleting account/data.

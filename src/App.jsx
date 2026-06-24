@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Authenticator, ThemeProvider, createTheme, useAuthenticator } from '@aws-amplify/ui-react';
 import { generateClient } from 'aws-amplify/api';
-import { confirmResetPassword, confirmSignUp, getCurrentUser, resetPassword, signIn as amplifySignIn, signOut as amplifySignOut, signUp as amplifySignUp } from 'aws-amplify/auth';
+import { confirmResetPassword, confirmSignUp, deleteUser, getCurrentUser, resetPassword, signIn as amplifySignIn, signOut as amplifySignOut, signUp as amplifySignUp } from 'aws-amplify/auth';
 import '@aws-amplify/ui-react/styles.css';
 import {
   BookOpen, Bot, CalendarDays, Check, CheckCircle2, ChevronDown, Circle, Clock, FileText,
@@ -237,6 +237,27 @@ async function upsertCloudRecord(model, knownId, payload) {
   return result?.data || null;
 }
 
+const OWNED_CLOUD_MODELS = [
+  'StudentProfile', 'UserPreferences', 'ExamTarget', 'TopicProgress', 'FlaggedTopic',
+  'StudySession', 'TimerGoal', 'PyqProgress', 'Task', 'ActivityLog',
+  'StudyMaterialProgress', 'TestAttempt', 'ContactMessage', 'DeleteDataRequest', 'AppFeedback'
+];
+
+async function deleteSignedInStudentCloudData(client) {
+  for (const modelName of OWNED_CLOUD_MODELS) {
+    const model = client?.models?.[modelName];
+    if (!model?.list || !model?.delete) continue;
+    let nextToken = undefined;
+    do {
+      const result = await model.list({ limit: 100, nextToken });
+      if (result?.errors?.length) throw new Error(result.errors[0]?.message || `Could not list ${modelName}`);
+      const records = result?.data || [];
+      await Promise.all(records.map((record) => record?.id ? model.delete({ id: record.id }) : null));
+      nextToken = result?.nextToken || undefined;
+    } while (nextToken);
+  }
+}
+
 function getDisplayName(data) {
   const profileName = data.profile.fullName?.trim();
   if (profileName) return profileName.split(' ')[0];
@@ -384,7 +405,6 @@ function LandingPage({ onSignIn, onCreateAccount, onOpenLegal }) {
         <span>© 2026 Study Blueprint. Created by Ganesh Rabade.</span>
         <div>
           <button onClick={() => onOpenLegal('privacy')}>Privacy Policy</button>
-          <button onClick={() => onOpenLegal('deleteData')}>Delete My Data</button>
           <button onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}>Contact</button>
         </div>
       </footer>
@@ -440,7 +460,7 @@ function LegalContent({ type, inApp = false, onBack, onRequestDelete, onClearBro
         <article className="card legalCard"><h3>What we never ask for</h3><p>Please do not share passwords, OTPs, payment card details, home address, private documents or any sensitive personal information inside the app or contact form.</p></article>
         <article className="card legalCard"><h3>How we use data</h3><p>Your details are used to show your study dashboard, save your profile, track your target date, record progress, answer support messages and improve the app experience.</p></article>
         <article className="card legalCard"><h3>Sharing and selling data</h3><p>We do not sell student personal information. For a customized coaching/class version, only the required study-progress data should be visible to the authorized class admin.</p></article>
-        <article className="card legalCard"><h3>Your choices</h3><p>You can update your profile, clear browser data, request deletion, or contact support for corrections. Use the Delete My Data page for deletion requests.</p></article>
+        <article className="card legalCard"><h3>Your choices</h3><p>You can update your profile, clear browser data, or delete your signed-in account data from the Profile page. Contact support for corrections or help.</p></article>
       </div>
     </section>
   );
@@ -598,7 +618,7 @@ function AppShell({ user, signOut }) {
     if (!q) return [];
     const pageHits = [
       ['dashboard', 'Dashboard'], ['pyq', 'PYQ Practice'], ['material', 'Study Material'],
-      ['tests', 'Test Series'], ['ai', 'AI Tutor'], ['contact', 'Contact Us'], ['privacy', 'Privacy Policy'], ['deleteData', 'Delete My Data'], ['profile', 'Profile']
+      ['tests', 'Test Series'], ['ai', 'AI Tutor'], ['contact', 'Contact Us'], ['privacy', 'Privacy Policy'], ['profile', 'Profile']
     ].filter(([, label]) => label.toLowerCase().includes(q)).map(([page, label]) => ({ type: 'Page', label, page }));
     const chapterHits = allChapters
       .filter(({ subject, chapter }) => `${subject} ${chapter.title} ${chapter.subSubject}`.toLowerCase().includes(q))
@@ -795,6 +815,20 @@ function AppShell({ user, signOut }) {
     setProfileDraft(fresh.profile);
   }
 
+  async function deleteAccountAndData() {
+    setCloudSync({ state: 'saving', message: 'Deleting your cloud profile and study data...' });
+    try {
+      await deleteSignedInStudentCloudData(cloudClient);
+      localStorage.removeItem(storageKey);
+      await deleteUser();
+      try { await signOut?.(); } catch (_) {}
+      return true;
+    } catch (error) {
+      setCloudSync({ state: 'local', message: error?.message || 'Delete failed. Please try again after some time.' });
+      throw error;
+    }
+  }
+
   const nav = [
     { id: 'dashboard', label: 'Dashboard', group: 'LEARN', icon: Home },
     { id: 'pyq', label: 'PYQ Practice', group: 'LEARN', icon: Pi },
@@ -804,7 +838,6 @@ function AppShell({ user, signOut }) {
     { id: 'contact', label: 'Contact Us', group: 'ACCOUNT', icon: Mail },
     { id: 'profile', label: 'Profile', group: 'ACCOUNT', icon: UserRound },
     { id: 'privacy', label: 'Privacy Policy', group: 'LEGAL', icon: ShieldCheck },
-    { id: 'deleteData', label: 'Delete My Data', group: 'LEGAL', icon: Trash2 },
   ];
 
   return (
@@ -858,8 +891,7 @@ function AppShell({ user, signOut }) {
         {data.active === 'ai' && <AiPage data={data} localStudyFallback={localStudyFallback} />}
         {data.active === 'contact' && <ContactPage data={data} />}
         {data.active === 'privacy' && <LegalContent type="privacy" inApp />}
-        {data.active === 'deleteData' && <LegalContent type="deleteData" inApp onClearBrowserData={resetLocalData} />}
-        {data.active === 'profile' && <ProfilePage data={data} profileDraft={profileDraft} setProfileDraft={setProfileDraft} editingProfile={editingProfile} setEditingProfile={setEditingProfile} saveProfile={saveProfile} signOut={signOut} resetLocalData={resetLocalData} cloudSync={cloudSync} />}
+        {data.active === 'profile' && <ProfilePage data={data} profileDraft={profileDraft} setProfileDraft={setProfileDraft} editingProfile={editingProfile} setEditingProfile={setEditingProfile} saveProfile={saveProfile} signOut={signOut} resetLocalData={resetLocalData} cloudSync={cloudSync} deleteAccountAndData={deleteAccountAndData} />}
       </main>
     </div>
   );
@@ -1190,12 +1222,16 @@ function ContactPage({ data }) {
   </section>;
 }
 
-function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setEditingProfile, saveProfile, signOut, resetLocalData, cloudSync }) {
+function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setEditingProfile, saveProfile, signOut, resetLocalData, cloudSync, deleteAccountAndData }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteStatus, setDeleteStatus] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const fields = [
-    ['fullName', 'Full Name', 'text'], ['mobile', 'Mobile No', 'text'], ['email', 'Email', 'text'], ['city', 'City / Village / Town', 'text'],
-    ['className', 'Class', 'text'], ['board', 'Board / State Board', 'text'], ['language', 'Preferred Language', 'text'],
-    ['studyGoal', 'Study Goal', 'text'], ['dailyStudyTime', 'Daily Study Time', 'text'], ['weakAreas', 'Weak Areas', 'text'], ['preferredContent', 'Preferred Content Type', 'text'],
+    ['fullName', 'Full Name', 'text', true], ['mobile', 'Mobile No', 'text', false], ['email', 'Email', 'text', true],
+    ['className', 'Class', 'text', true], ['board', 'Board / State Board', 'text', false], ['language', 'Preferred Language', 'text', false],
+    ['studyGoal', 'Study Goal', 'text', false], ['dailyStudyTime', 'Daily Study Time', 'text', false], ['weakAreas', 'Weak Areas', 'text', false],
   ];
   const left = daysLeft(data.profile.targetDate);
   const avatarUrl = profileDraft.avatarDataUrl || data.profile.avatarDataUrl || '';
@@ -1210,6 +1246,23 @@ function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setE
       setEditingProfile(true);
     };
     reader.readAsDataURL(file);
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmText.trim().toUpperCase() !== 'DELETE') {
+      setDeleteStatus('Type DELETE to confirm.');
+      return;
+    }
+    setDeletingAccount(true);
+    setDeleteStatus('Deleting your cloud data and account...');
+    try {
+      await deleteAccountAndData?.();
+      setDeleteStatus('Deleted. Opening Study Blueprint again...');
+      setTimeout(() => window.location.assign('/'), 600);
+    } catch (error) {
+      setDeleteStatus(error?.message || 'Could not delete right now. Please try again after some time.');
+      setDeletingAccount(false);
+    }
   }
 
   return (
@@ -1258,12 +1311,10 @@ function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setE
       <div className="profileGrid profileGridV23">
         <div className="card wide">
           <div className="between"><h3>Personal & Academic Details</h3>{editingProfile ? <button onClick={saveProfile}><Save size={16}/> Save</button> : <button onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit</button>}</div>
-          <div className="detailsGrid detailsGridV23">{fields.map(([key, label, type]) => <label key={key}><span>{label}</span>{editingProfile && key !== 'email' ? <input value={profileDraft[key] || ''} onChange={(e) => setProfileDraft({ ...profileDraft, [key]: e.target.value })} placeholder={`Enter ${label}`} type={type} /> : <b>{data.profile[key] || '-'}</b>}</label>)}</div>
+          <div className="detailsGrid detailsGridV23">{fields.map(([key, label, type, required]) => <label key={key}><span>{label}{!required && <small className="optionalTag">Optional</small>}</span>{editingProfile && key !== 'email' ? <input value={profileDraft[key] || ''} onChange={(e) => setProfileDraft({ ...profileDraft, [key]: e.target.value })} placeholder={required ? `Enter ${label}` : `Optional ${label}`} type={type} /> : <b>{data.profile[key] || '-'}</b>}</label>)}</div>
         </div>
         <div className="profileSideStack">
-          <div className="card actions actionsV23"><h3>Account Actions</h3><button className="primary" onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit Profile</button>{editingProfile && <button onClick={saveProfile}><Save size={16}/> Save Changes</button>}<button className="danger" onClick={() => setShowLogoutConfirm(true)}><LogOut size={16}/> Sign out</button><button onClick={resetLocalData}><RotateCcw size={16}/> Reset this browser data</button></div>
-          <div className={`safeBox safeBoxV23 syncStatusBox ${cloudSync?.state || 'local'}`}><b>{cloudSync?.state === 'synced' ? 'Cloud sync active' : cloudSync?.state === 'saving' ? 'Saving...' : cloudSync?.state === 'ready' ? 'Cloud ready' : 'Privacy first'}</b><span>{cloudSync?.message || 'We ask only for basic study details needed for your dashboard.'}</span></div>
-          <div className="safeBox safeBoxV23"><b>Privacy first</b><span>We ask only for basic study details needed for your dashboard. Never share passwords, OTPs, payment details or private documents.</span></div>
+          <div className="card actions actionsV23"><h3>Account Actions</h3><button className="primary" onClick={() => { setProfileDraft(data.profile); setEditingProfile(true); }}><PenLine size={16}/> Edit Profile</button>{editingProfile && <button onClick={saveProfile}><Save size={16}/> Save Changes</button>}<button onClick={resetLocalData}><RotateCcw size={16}/> Reset this browser data</button><button className="danger" onClick={() => setShowDeleteConfirm(true)}><Trash2 size={16}/> Delete My Data</button><button className="danger softDanger" onClick={() => setShowLogoutConfirm(true)}><LogOut size={16}/> Sign out</button></div>
         </div>
       </div>
 
@@ -1275,6 +1326,22 @@ function ProfilePage({ data, profileDraft, setProfileDraft, editingProfile, setE
             <div className="confirmActions">
               <button onClick={() => setShowLogoutConfirm(false)}>Cancel</button>
               <button className="danger" onClick={() => { setShowLogoutConfirm(false); signOut?.(); }}>Yes, sign out</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="confirmOverlay" role="dialog" aria-modal="true">
+          <div className="confirmBox deleteConfirmBox">
+            <h3>Delete your data and account?</h3>
+            <p>This will try to delete your Study Blueprint cloud records, clear this browser data, and delete your signed-in login account. This action cannot be undone.</p>
+            <p className="muted">For safety, type <b>DELETE</b> below.</p>
+            <input className="confirmInput" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} placeholder="Type DELETE" disabled={deletingAccount} />
+            {deleteStatus && <div className="contactStatusBox">{deleteStatus}</div>}
+            <div className="confirmActions">
+              <button onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); setDeleteStatus(''); }} disabled={deletingAccount}>Cancel</button>
+              <button className="danger" onClick={handleDeleteAccount} disabled={deletingAccount}>{deletingAccount ? 'Deleting...' : 'Delete my data'}</button>
             </div>
           </div>
         </div>
