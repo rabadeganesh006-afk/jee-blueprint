@@ -94,6 +94,36 @@
   box-shadow: 0 14px 30px rgba(37, 99, 235, 0.14);
 }
 
+.demoWebsiteLandingButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.demoWebsiteNavButton {
+  color: #2563eb !important;
+  font-weight: 900 !important;
+}
+
+.demoBackLanding {
+  position: fixed;
+  z-index: 9999;
+  left: 18px;
+  top: 14px;
+  border: 1px solid rgba(37, 99, 235, 0.22);
+  border-radius: 999px;
+  padding: 11px 16px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #1d4ed8;
+  font-weight: 900;
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.14);
+  cursor: pointer;
+}
+
+.demoBackLanding:hover {
+  background: #eff6ff;
+}
+
 .demoAuthChecklist {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -128,108 +158,6 @@
   min-width: 0;
 }
 
-.demoTopbar {
-  gap: 14px;
-}
-
-.demoSideCard {
-  margin: 18px 14px 0;
-  padding: 16px;
-  border-radius: 20px;
-  background: rgba(37, 99, 235, 0.10);
-  border: 1px solid rgba(37, 99, 235, 0.16);
-  color: #dbeafe;
-  display: grid;
-  gap: 8px;
-}
-
-.demoSideCard span {
-  color: rgba(226, 232, 240, 0.8);
-  font-size: 0.85rem;
-  line-height: 1.4;
-}
-
-.demoSideCard button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  border: 0;
-  border-radius: 14px;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.12);
-  color: white;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.demoHeroDashboard .demoRing {
-  background: conic-gradient(#3b82f6 0deg 165deg, #10b981 165deg 276deg, #a855f7 276deg 360deg);
-}
-
-.weakMini {
-  display: grid;
-  gap: 3px;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-}
-
-.weakMini:last-child {
-  border-bottom: 0;
-}
-
-.weakMini span,
-.demoScoreRow small {
-  color: #64748b;
-  font-size: 0.8rem;
-}
-
-.demoTaskRow svg {
-  color: #2563eb;
-  flex: 0 0 auto;
-}
-
-.demoSubjectProgress {
-  display: grid;
-  gap: 10px;
-  padding: 14px 0;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-}
-
-.demoSubjectProgress:last-child {
-  border-bottom: 0;
-}
-
-.demoStar {
-  color: #f59e0b;
-  margin-left: auto;
-}
-
-.demoWeakCard {
-  min-height: 230px;
-}
-
-.demoBigMetric {
-  display: block;
-  font-size: clamp(2.2rem, 6vw, 4rem);
-  letter-spacing: -0.06em;
-  margin: 10px 0;
-  color: #1d4ed8;
-}
-
-.demoAnalyticsLine {
-  display: grid;
-  grid-template-columns: 150px 1fr 60px;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
-}
-
-.demoAnalyticsLine:last-child {
-  border-bottom: 0;
-}
-
 @media (max-width: 900px) {
   .demoAuthBrand,
   .demoTopbar {
@@ -241,7 +169,10 @@
     grid-template-columns: 1fr;
   }
 
-  .demoAnalyticsLine {
-    grid-template-columns: 1fr;
+  .demoBackLanding {
+    left: 10px;
+    top: 10px;
+    padding: 9px 12px;
+    font-size: 0.82rem;
   }
 }
