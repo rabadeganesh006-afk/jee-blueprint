@@ -1,0 +1,49 @@
+AI Tutor red box remove fix
+
+What this removes:
+- The paragraph inside the red-box area:
+  "AI Tutor is currently turned off..."
+- The safeBox line:
+  "For now, continue using Topic Tracker..."
+
+Automatic method:
+1. Extract this ZIP inside your project root folder.
+2. Your project root means the folder where package.json is present.
+3. Run:
+
+   node fix-ai-tutor.cjs
+
+4. Then test:
+
+   npm run dev
+
+5. Open Demo Site → AI Tutor.
+
+Manual method:
+Open src/WorkingDemoApp.jsx.
+Search:
+
+   function AiPage()
+
+Replace the whole AiPage function with this:
+
+function AiPage() {
+  return (
+    <section className="page">
+      <div className="pageHead">
+        <h1>AI Tutor</h1>
+        <p>This feature is temporarily disabled while we improve reliability.</p>
+      </div>
+
+      <div className="card aiTutorPanel comingSoonPanel">
+        <div className="aiTutorTop">
+          <div className="aiAvatar"><Bot size={30} /></div>
+          <div>
+            <span className="badge">Coming Soon</span>
+            <h2>Study Blueprint AI Tutor is being upgraded</h2>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
